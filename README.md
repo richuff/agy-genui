@@ -24,7 +24,7 @@ Model → ```agy-ui {JSON} ``` → build.mjs → self-contained widget.html → 
 
 ## Features
 
-- **20 ready components** — stat (with sparkline/delta), sortable/filterable/paginated table, SVG charts (bar/line/pie), progress (linear/ring), diff, tabs, accordion, card, row, timeline, tree, form, quiz, button, callout, badge, code, plot, markdown, image
+- **20 ready components** — stat (with sparkline/delta), sortable/filterable/paginated table, **7 interactive SVG chart types** (line/area/bar/grouped/stacked/pie/donut/scatter with hover tooltips, legend toggle and crosshair), progress (linear/ring), diff, tabs, accordion, card, row, timeline, tree, form, quiz, button, callout, badge, code, plot, markdown, image
 - **Zero dependencies** — no CDN, no npm runtime; everything inlined into one HTML file
 - **CSP-safe** — `default-src 'none'`, no `eval`, no external scripts
 - **Theme-aware** — CSS variables adapt to Antigravity light/dark themes
