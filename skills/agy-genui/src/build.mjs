@@ -18,6 +18,7 @@ const SKILL_ROOT = resolve(__dirname, '..');
 const SHELL = resolve(__dirname, 'shell.html');
 const STYLE = resolve(__dirname, 'style.css');
 const RENDERER = resolve(__dirname, 'renderer.js');
+const CHARTS = resolve(__dirname, 'charts.js');
 
 function fail(msg) { console.error('[agy-genui] ERROR: ' + msg); process.exit(1); }
 
@@ -40,11 +41,14 @@ function build(spec) {
   if (!spec || typeof spec !== 'object') fail('spec 必须是 JSON 对象');
   const shell = readFileSync(SHELL, 'utf8');
   const style = readFileSync(STYLE, 'utf8');
+  const charts = readFileSync(CHARTS, 'utf8');
   const renderer = readFileSync(RENDERER, 'utf8');
   const json = safeJson(spec);
   // 用函数形式替换，避免替换串中的 $& / $' / $` 被当成特殊模式而截断内容
+  // 注意：charts.js 必须在 renderer.js 之前注入，renderer 依赖 AgyGenUICharts
   const html = shell
     .replace('/*__STYLE__*/', () => style)
+    .replace('/*__CHARTS__*/', () => charts)
     .replace('/*__RENDERER__*/', () => renderer)
     .replace('/*__SPEC__*/', () => json);
   return html;

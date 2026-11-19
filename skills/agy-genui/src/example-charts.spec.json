@@ -1,0 +1,133 @@
+{
+  "title": "图表组件演示",
+  "description": "折线 / 面积 / 柱状 / 堆叠 / 饼图 / 环形 / 散点，全部支持悬停与图例交互",
+  "items": [
+    {
+      "type": "echart",
+      "title": "折线图 · 带图例联动",
+      "echart": {
+        "preset": "line",
+        "xKey": "month",
+        "data": [
+          { "month": "1月", "tokens": 12000, "cost": 120 },
+          { "month": "2月", "tokens": 15500, "cost": 148 },
+          { "month": "3月", "tokens": 18200, "cost": 176 },
+          { "month": "4月", "tokens": 16800, "cost": 162 },
+          { "month": "5月", "tokens": 21500, "cost": 205 },
+          { "month": "6月", "tokens": 24800, "cost": 232 },
+          { "month": "7月", "tokens": 23100, "cost": 221 }
+        ],
+        "series": [
+          { "key": "tokens", "name": "Token 消耗", "type": "line", "color": "#3b82f6", "smooth": true },
+          { "key": "cost", "name": "费用", "type": "line", "color": "#10b981", "smooth": true }
+        ]
+      }
+    },
+    {
+      "type": "echart",
+      "title": "面积图 · 平滑曲线",
+      "echart": {
+        "preset": "area",
+        "xKey": "day",
+        "data": [
+          { "day": "周一", "v": 3200 },
+          { "day": "周二", "v": 4100 },
+          { "day": "周三", "v": 3800 },
+          { "day": "周四", "v": 5200 },
+          { "day": "周五", "v": 6100 },
+          { "day": "周六", "v": 4800 },
+          { "day": "周日", "v": 3900 }
+        ],
+        "series": [{ "key": "v", "name": "活跃度", "type": "area", "color": "#8b5cf6", "smooth": true }]
+      }
+    },
+    {
+      "type": "echart",
+      "title": "分组柱状图",
+      "echart": {
+        "preset": "bar",
+        "xKey": "model",
+        "data": [
+          { "model": "Gemini 3.8", "input": 45200, "output": 12800 },
+          { "model": "Claude Opus", "input": 28400, "output": 9200 },
+          { "model": "Gemini 3.5", "input": 18600, "output": 5400 }
+        ],
+        "series": [
+          { "key": "input", "name": "输入", "type": "bar", "color": "#3b82f6" },
+          { "key": "output", "name": "输出", "type": "bar", "color": "#f59e0b" }
+        ]
+      }
+    },
+    {
+      "type": "echart",
+      "title": "堆叠柱状图",
+      "echart": {
+        "preset": "stackedBar",
+        "xKey": "week",
+        "data": [
+          { "week": "第1周", "a": 3200, "b": 2100, "c": 1400 },
+          { "week": "第2周", "a": 4100, "b": 2600, "c": 1800 },
+          { "week": "第3周", "a": 3800, "b": 3100, "c": 1200 },
+          { "week": "第4周", "a": 4600, "b": 2800, "c": 2100 }
+        ],
+        "series": [
+          { "key": "a", "name": "工具执行", "color": "#2f6df6" },
+          { "key": "b", "name": "模型回复", "color": "#8b5cf6" },
+          { "key": "c", "name": "系统开销", "color": "#06b6d4" }
+        ]
+      }
+    },
+    {
+      "type": "echart",
+      "title": "环形图 · 悬停扇区突出",
+      "echart": {
+        "preset": "donut",
+        "xKey": "type",
+        "data": [
+          { "type": "工具结果", "value": 83100 },
+          { "type": "工具定义", "value": 38300 },
+          { "type": "系统提示词", "value": 19400 },
+          { "type": "模型思考", "value": 10100 },
+          { "type": "助手消息", "value": 5200 },
+          { "type": "用户消息", "value": 1300 }
+        ],
+        "series": [{ "key": "value", "name": "上下文" }]
+      }
+    },
+    {
+      "type": "echart",
+      "title": "饼图",
+      "echart": {
+        "preset": "pie",
+        "xKey": "tool",
+        "data": [
+          { "tool": "run_command", "value": 65 },
+          { "tool": "read_file", "value": 53 },
+          { "tool": "write_file", "value": 30 },
+          { "tool": "manage_task", "value": 24 },
+          { "tool": "swarm", "value": 16 },
+          { "tool": "edit_file", "value": 5 }
+        ],
+        "series": [{ "key": "value", "name": "调用次数" }]
+      }
+    },
+    {
+      "type": "echart",
+      "title": "散点图",
+      "echart": {
+        "preset": "scatter",
+        "xKey": "step",
+        "data": [
+          { "step": "1", "dur": 1200 },
+          { "step": "2", "dur": 3400 },
+          { "step": "3", "dur": 2100 },
+          { "step": "4", "dur": 5600 },
+          { "step": "5", "dur": 4800 },
+          { "step": "6", "dur": 7200 },
+          { "step": "7", "dur": 3900 }
+        ],
+        "series": [{ "key": "dur", "name": "耗时 (ms)", "type": "scatter", "color": "#ec4899" }]
+      }
+    }
+  ]
+}

@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>agy-genui widget</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https: blob:; connect-src 'none';">
+<style>/* agy-genui widget styles — CSP-safe, theme-aware */
+:root {
+  --agy-surface: var(--background, #ffffff);
+  --agy-surface-2: var(--secondary, #f3f4f6);
+  --agy-text: var(--foreground, #111827);
+  --agy-muted: var(--muted-foreground, #6b7280);
+  --agy-border: var(--border, #e5e7eb);
+  --agy-primary: var(--primary, #3b82f6);
+  --agy-success: #10b981;
+  --agy-warning: #f59e0b;
+  --agy-error: #ef4444;
+  --agy-radius: 8px;
+  --agy-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --agy-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --agy-t: 140ms cubic-bezier(.4,0,.2,1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --agy-surface: var(--background, #111827);
+    --agy-surface-2: var(--secondary, #1f2937);
+    --agy-text: var(--foreground, #f9fafb);
+    --agy-muted: var(--muted-foreground, #9ca3af);
+    --agy-border: var(--border, #374151);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--agy-surface); color: var(--agy-text); font: 13px/1.5 var(--agy-font); }
+#agy-root { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.widget-title { font-size: 15px; font-weight: 650; }
+.widget-desc { font-size: 12px; color: var(--agy-muted); margin-top: -8px; }
+.widget-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.comp { background: var(--agy-surface); border: 1px solid var(--agy-border); border-radius: var(--agy-radius); padding: 12px; min-width: 0; }
+.comp-title { font-weight: 600; font-size: 13px; margin-bottom: 10px; }
+.unknown, .error { border-color: var(--agy-error); color: var(--agy-error); font-size: 12px; }
+
+/* stat */
+.stat .eyebrow { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--agy-muted); }
+.stat-value { font-size: 26px; font-weight: 720; line-height: 1.2; margin: 4px 0; }
+.stat-label { font-size: 11px; color: var(--agy-muted); }
+.delta { font-size: 12px; font-weight: 600; color: var(--agy-muted); }
+.delta-pos { color: var(--agy-success); }
+.delta-neg { color: var(--agy-error); }
+.spark { display: block; width: 100%; height: 24px; margin-top: 6px; }
+
+/* table */
+.table-comp { grid-column: 1 / -1; padding: 0; overflow: hidden; }
+.table-wrap { overflow-x: auto; }
+.filter { padding: 10px 12px; border-bottom: 1px solid var(--agy-border); }
+.filter-input { width: 100%; padding: 6px 10px; font: inherit; font-size: 12px; color: var(--agy-text); background: var(--agy-surface); border: 1px solid var(--agy-border); border-radius: 6px; outline: none; }
+.filter-input:focus { border-color: var(--agy-primary); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--agy-border); white-space: nowrap; }
+th { font-weight: 600; color: var(--agy-muted); background: var(--agy-surface-2); user-select: none; }
+th.sortable { cursor: pointer; }
+th.sortable:hover { color: var(--agy-text); }
+.sort-asc::after { content: ' ▲'; }
+.sort-desc::after { content: ' ▼'; }
+tbody tr:hover td { background: var(--agy-surface-2); }
+td .empty { color: var(--agy-muted); }
+.badge { display: inline-block; padding: 2px 8px; font-size: 10px; font-weight: 600; border-radius: 999px; }
+.badge-success, .badge-active { background: rgba(16,185,129,.15); color: var(--agy-success); }
+.badge-warning { background: rgba(245,158,11,.15); color: var(--agy-warning); }
+.badge-error { background: rgba(239,68,68,.15); color: var(--agy-error); }
+.badge-gray, .badge-idle, .badge-info { background: var(--agy-surface-2); color: var(--agy-muted); }
+.cell-bar { width: 80px; height: 6px; border-radius: 3px; background: var(--agy-border); overflow: hidden; }
+.cell-bar i { display: block; height: 100%; background: var(--agy-primary); border-radius: 3px; }
+.pager { display: flex; gap: 10px; justify-content: center; align-items: center; padding: 10px; font-size: 12px; color: var(--agy-muted); }
+.pager button { padding: 4px 10px; font: inherit; font-size: 11px; color: var(--agy-text); background: var(--agy-surface); border: 1px solid var(--agy-border); border-radius: 6px; cursor: pointer; }
+.pager button:disabled { opacity: .4; cursor: default; }
+
+/* chart */
+.chart-comp, .plot-comp { grid-column: 1 / -1; }
+.chart-svg, .plot-svg { display: block; width: 100%; height: auto; max-height: 300px; }
+.chart-svg .grid { stroke: var(--agy-border); stroke-width: 1; }
+.chart-svg .axis { fill: var(--agy-muted); font-size: 11px; }
+.hint { font-size: 11px; color: var(--agy-muted); }
+
+/* ---------- 增强图表（charts.js） ---------- */
+.agy-chart { position: relative; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.agy-chart-svg { display: block; width: 100%; height: auto; max-height: 320px; overflow: visible; }
+
+.agy-grid-line { stroke: var(--agy-border); stroke-width: 1; opacity: .55; }
+.agy-axis-line { stroke: var(--agy-border); stroke-width: 1; }
+.agy-axis-text { fill: var(--agy-muted); font-size: 11px; font-family: inherit; }
+
+.agy-bar { transition: opacity .12s ease; }
+.agy-line { transition: opacity .12s ease; }
+.agy-area { transition: opacity .12s ease; }
+.agy-dot  { transition: opacity .12s ease, r .1s ease; }
+
+/* 悬停命中层：透明但可接收事件 */
+.agy-hit { cursor: pointer; }
+.agy-hit-layer { pointer-events: all; }
+
+/* 饼图扇区 */
+.agy-slice {
+  cursor: pointer;
+  transition: opacity .12s ease, transform .14s cubic-bezier(.2,.8,.3,1);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.agy-slice.agy-slice-hi { transform: scale(1.035); }
+.agy-slice.agy-slice-pinned { transform: scale(1.06); }
+
+.agy-pie-total-v {
+  fill: var(--agy-text); font-size: 22px; font-weight: 700;
+  font-family: inherit; letter-spacing: -.5px;
+}
+.agy-pie-total-l { fill: var(--agy-muted); font-size: 11px; font-family: inherit; }
+
+/* 图例（横向，折线/柱状） */
+.agy-legend {
+  display: flex; flex-wrap: wrap; gap: 6px 14px;
+  padding: 2px 2px 0; align-items: center;
+}
+.agy-legend-item {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 4px; border: none; background: transparent;
+  font: inherit; font-size: 11px; color: var(--agy-muted);
+  cursor: pointer; border-radius: 5px; transition: background .12s, opacity .12s;
+}
+.agy-legend-item:hover { background: var(--agy-surface-2); color: var(--agy-text); }
+.agy-legend-item.off { opacity: .38; text-decoration: line-through; }
+.agy-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 8px; }
+.agy-legend-name { white-space: nowrap; }
+
+/* 图例（纵向，饼图右侧） */
+.agy-pie-wrap { flex-direction: row; align-items: center; gap: 4px; }
+.agy-pie-wrap > svg { flex: 1 1 58%; min-width: 0; }
+.agy-legend-vert {
+  flex: 1 1 42%; flex-direction: column; align-items: stretch;
+  gap: 1px; max-height: 260px; overflow-y: auto; padding-right: 2px;
+}
+.agy-legend-row {
+  display: grid; grid-template-columns: 8px 1fr auto auto;
+  align-items: center; gap: 6px;
+  padding: 4px 6px; border: none; background: transparent;
+  font: inherit; font-size: 11px; text-align: left;
+  color: var(--agy-muted); cursor: pointer; border-radius: 5px;
+  transition: background .12s;
+}
+.agy-legend-row:hover, .agy-legend-row.on, .agy-legend-row.pinned {
+  background: var(--agy-surface-2); color: var(--agy-text);
+}
+.agy-legend-val { font-variant-numeric: tabular-nums; color: var(--agy-text); }
+.agy-legend-pct { font-variant-numeric: tabular-nums; opacity: .7; min-width: 38px; text-align: right; }
+
+/* 悬浮提示 */
+.agy-chart-tip {
+  position: fixed; z-index: 2147483000; pointer-events: none;
+  min-width: 120px; max-width: 260px;
+  padding: 7px 9px; border-radius: 8px;
+  background: var(--agy-surface, #fff);
+  border: 1px solid var(--agy-border);
+  box-shadow: 0 6px 22px rgba(16,18,24,.16), 0 1px 4px rgba(16,18,24,.08);
+  font-size: 11px; color: var(--agy-text);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity .1s ease, transform .1s ease;
+}
+.agy-chart-tip.on { opacity: 1; transform: none; }
+.agy-tip-title {
+  font-weight: 650; margin-bottom: 4px; font-size: 11.5px;
+  color: var(--agy-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.agy-tip-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 1.5px 0; color: var(--agy-muted);
+}
+.agy-tip-row-hi { color: var(--agy-text); font-weight: 600; }
+.agy-tip-dot { width: 7px; height: 7px; border-radius: 2px; flex: 0 0 7px; }
+.agy-tip-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agy-tip-val { font-variant-numeric: tabular-nums; color: var(--agy-text); }
+
+@media (max-width: 520px) {
+  .agy-pie-wrap { flex-direction: column; }
+  .agy-legend-vert { max-height: none; }
+}
+
+/* progress */
+.progress { display: flex; flex-direction: column; gap: 6px; }
+.progress-label { font-size: 11px; color: var(--agy-muted); }
+.progress-track { height: 8px; border-radius: 999px; background: var(--agy-border); overflow: hidden; }
+.progress-track i { display: block; height: 100%; background: var(--agy-primary); border-radius: 999px; transition: width .3s; }
+.progress.ring { position: relative; align-items: center; min-height: 80px; }
+.progress.ring svg { width: 64px; height: 64px; transform: rotate(-90deg); }
+.progress.ring circle { fill: none; stroke-width: 6; stroke-linecap: round; }
+.progress.ring .track { stroke: var(--agy-border); }
+.progress.ring .progress { stroke: var(--agy-primary); transition: stroke-dashoffset .5s; }
+.ring-label { position: absolute; top: 20px; font-weight: 700; font-size: 14px; }
+
+/* code / diff */
+.code, .diff { grid-column: 1 / -1; padding: 0; overflow: hidden; }
+.code-head { padding: 8px 12px; font-size: 11px; color: var(--agy-muted); background: var(--agy-surface-2); border-bottom: 1px solid var(--agy-border); }
+pre { margin: 0; padding: 12px; overflow: auto; font: 12px/1.6 var(--agy-mono); white-space: pre-wrap; word-break: break-word; }
+.diff-cols { display: grid; grid-template-columns: 1fr 1fr; }
+.diff-col { min-width: 0; border-right: 1px solid var(--agy-border); }
+.diff-col:last-child { border-right: none; }
+.diff-h { padding: 4px 8px; font: 11px var(--agy-mono); color: var(--agy-muted); }
+.removed-h { background: rgba(239,68,68,.1); }
+.added-h { background: rgba(16,185,129,.1); }
+.diff-line { display: flex; font: 11px/1.6 var(--agy-mono); }
+.diff-line.removed { background: rgba(239,68,68,.12); }
+.diff-line.added { background: rgba(16,185,129,.12); }
+.gutter { flex: 0 0 32px; padding-right: 8px; text-align: right; color: var(--agy-muted); user-select: none; border-right: 1px solid var(--agy-border); }
+.content { flex: 1; padding-left: 8px; white-space: pre-wrap; word-break: break-all; }
+
+/* timeline */
+.timeline { grid-column: 1 / -1; }
+.tl-item { position: relative; padding: 0 0 16px 24px; border-left: 2px solid var(--agy-border); margin-left: 6px; }
+.tl-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+.tl-dot { position: absolute; left: -6px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--agy-primary); }
+.tl-time { font-size: 10px; color: var(--agy-muted); }
+.tl-title { font-weight: 600; font-size: 12px; }
+.tl-desc { font-size: 11px; color: var(--agy-muted); }
+
+/* tree */
+.tree { grid-column: 1 / -1; font: 12px var(--agy-mono); }
+.tree-node { padding: 4px 8px; display: flex; align-items: center; gap: 6px; }
+.tree-node:hover { background: var(--agy-surface-2); }
+.tree-caret { display: inline-block; width: 12px; color: var(--agy-muted); }
+.tree-caret.blank { visibility: hidden; }
+
+/* form / quiz */
+.form, .quiz { grid-column: 1 / -1; }
+.form-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 10px 0; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field label { font-size: 11px; font-weight: 600; }
+.form-field input, .form-field select, .form-field textarea { padding: 7px 10px; font: inherit; font-size: 12px; color: var(--agy-text); background: var(--agy-surface); border: 1px solid var(--agy-border); border-radius: 6px; outline: none; }
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--agy-primary); }
+.form-actions, .quiz-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+.btn { padding: 7px 14px; font: inherit; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; border: 1px solid var(--agy-border); background: var(--agy-surface); color: var(--agy-text); }
+.btn.primary { background: var(--agy-primary); border-color: var(--agy-primary); color: #fff; }
+.btn:hover { opacity: .9; }
+.form-note { margin-top: 8px; font-size: 11px; color: var(--agy-success); }
+.quiz-q { padding: 12px 0; border-bottom: 1px solid var(--agy-border); }
+.quiz-qt { font-weight: 600; margin-bottom: 8px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 6px; }
+.quiz-opt { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+.quiz-fb { margin-top: 8px; font-size: 11px; }
+.quiz-fb.ok { color: var(--agy-success); }
+.quiz-fb.bad { color: var(--agy-error); }
+.quiz-score { font-weight: 600; color: var(--agy-primary); }
+
+/* callout */
+.callout { grid-column: 1 / -1; padding: 10px 14px; border-left: 3px solid; border-radius: 6px; }
+.callout-info { border-color: var(--agy-primary); background: rgba(59,130,246,.08); }
+.callout-success { border-color: var(--agy-success); background: rgba(16,185,129,.08); }
+.callout-warning { border-color: var(--agy-warning); background: rgba(245,158,11,.08); }
+.callout-error { border-color: var(--agy-error); background: rgba(239,68,68,.08); }
+
+/* tabs / accordion / card / row */
+.tabs, .accordion, .card, .row { grid-column: 1 / -1; }
+.tabs-list { display: flex; gap: 2px; border-bottom: 1px solid var(--agy-border); }
+.tab-btn { padding: 8px 14px; font: inherit; font-size: 12px; background: transparent; color: var(--agy-muted); border: none; border-bottom: 2px solid transparent; cursor: pointer; }
+.tab-btn.active { color: var(--agy-primary); border-bottom-color: var(--agy-primary); }
+.tabs-body { padding-top: 12px; }
+.acc-item { border-bottom: 1px solid var(--agy-border); }
+.acc-item:last-child { border: none; }
+.acc-trigger { width: 100%; display: flex; justify-content: space-between; padding: 10px 0; font: inherit; font-size: 12px; font-weight: 600; background: transparent; color: var(--agy-text); border: none; cursor: pointer; }
+.acc-caret { transition: transform var(--agy-t); }
+.acc-body { display: none; padding-bottom: 12px; }
+.acc-body.open { display: block; }
+.card-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.row { display: flex; gap: 10px; align-items: stretch; }
+.row-item { min-width: 0; }
+
+/* image */
+.image img { display: block; }
+
+/* ---------- flow 流程图（车道式布局，避免绝对定位错位） ---------- */
+.flow { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 14px; overflow-x: auto; }
+.flow-lane { border: 1px solid var(--agy-border); border-radius: var(--agy-radius); padding: 10px 12px 14px; background: var(--agy-surface); }
+.flow-lane-name { font-size: 11px; font-weight: 650; color: var(--agy-muted); letter-spacing: .02em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--agy-border); }
+.flow-track { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; min-width: min-content; }
+.flow-node { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 8px 14px; font-size: 12px; line-height: 1.35; text-align: center; border-radius: 7px;
+  border: 1px solid var(--agy-border); background: var(--agy-surface-2); color: var(--agy-text); max-width: 220px; }
+.flow-node-label { display: block; }
+.flow-node-sub { display: block; font-size: 10px; color: var(--agy-muted); }
+/* 决策菱形：用旋转方块 + 反向旋转内容，保证文字水平居中 */
+.flow-node--decision { position: relative; background: transparent; border: none;
+  width: 168px; height: 112px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.flow-node--decision::before { content: ""; position: absolute; left: 50%; top: 50%;
+  width: 88px; height: 88px; margin: -44px 0 0 -44px;
+  background: var(--agy-surface-2); border: 1px solid var(--agy-border);
+  transform: rotate(45deg); border-radius: 4px; }
+.flow-node--decision .flow-node-label,
+.flow-node--decision .flow-node-sub { position: relative; z-index: 1; padding: 0 8px;
+  max-width: 96px; line-height: 1.3; font-size: 11px; }
+.flow-node--note { background: transparent; border-style: dashed; color: var(--agy-muted); font-size: 11px; }
+.flow-node--start, .flow-node--end { border-radius: 999px; background: var(--agy-primary); color: #fff; border-color: var(--agy-primary); }
+/* 箭头 */
+.flow-arrow { flex: 0 0 auto; position: relative; display: flex; align-items: center; justify-content: center; width: 58px; height: 20px; }
+.flow-arrow-line { display: block; width: 100%; height: 1.5px; background: var(--agy-muted); position: relative; opacity: .75; }
+.flow-arrow-line::after { content: ""; position: absolute; right: -1px; top: 50%; width: 6px; height: 6px;
+  border-top: 1.5px solid var(--agy-muted); border-right: 1.5px solid var(--agy-muted); transform: translateY(-50%) rotate(45deg); }
+.flow-arrow--labeled { height: 32px; }
+.flow-arrow-label { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+  font-size: 10px; color: var(--agy-muted); background: var(--agy-surface); padding: 1px 5px; z-index: 2;
+  border: 1px solid var(--agy-border); border-radius: 4px; }
+/* 分支行 */
+.flow-branch { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--agy-border); }
+.flow-branch-head { font-size: 10px; color: var(--agy-muted); margin-bottom: 8px; }
+.flow-empty { font-size: 11px; color: var(--agy-muted); }
+
+@media (max-width: 520px) {
+  .widget-items { grid-template-columns: 1fr; }
+  .stat-value { font-size: 22px; }
+  .diff-cols { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="agy-root"></div>
+<script>/* agy-genui charts — 图表引擎（零依赖 SVG，CSP 安全）
+ *
+ * 支持类型：line / area / bar / pie / donut / scatter / stackedBar / groupedBar
+ * 交互（参考 agy-context 的做法）：
+ *   - 悬停数据点/扇区 → 高亮该元素、其余淡化、显示浮动 tooltip
+ *   - 图例悬停 → 高亮对应系列、其余淡化；点击 → 显示/隐藏该系列
+ *   - 饼图/环形图悬停 → 扇区外扩、中心显示该项名称与占比
+ *   - 十字准线（折线图）跟随鼠标
+ *   - 数值标签、坐标轴刻度、网格线
+ *
+ * 本文件由 build.mjs 内联进 widget HTML，不加载任何外部资源。
+ */
+(function () {
+  'use strict';
+
+  var PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                 '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'];
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function fmtNum(n) {
+    n = Number(n) || 0;
+    var a = Math.abs(n);
+    if (a >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (a >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (a >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    if (a > 0 && a < 1) return n.toFixed(2);
+    return String(Math.round(n * 100) / 100);
+  }
+
+  /* ---------- 坐标轴刻度：取「好看」的步长 ---------- */
+  function niceTicks(min, max, count) {
+    count = count || 5;
+    if (max === min) { max = min + 1; }
+    var span = max - min;
+    var step = Math.pow(10, Math.floor(Math.log(span / count) / Math.LN10));
+    var err = (span / count) / step;
+    if (err >= 7.5) step *= 10;
+    else if (err >= 3.5) step *= 5;
+    else if (err >= 1.5) step *= 2;
+    var lo = Math.floor(min / step) * step;
+    var hi = Math.ceil(max / step) * step;
+    var ticks = [];
+    for (var v = lo; v <= hi + step * 0.5; v += step) {
+      ticks.push(Math.round(v * 1e6) / 1e6);
+    }
+    return { lo: lo, hi: hi, ticks: ticks };
+  }
+
+  /* ---------- 悬浮提示（单例，跟随鼠标） ---------- */
+  var tip = null;
+  function getTip() {
+    if (tip && tip.parentNode) return tip;
+    tip = document.createElement('div');
+    tip.className = 'agy-chart-tip';
+    document.body.appendChild(tip);
+    return tip;
+  }
+  function showTip(html, evt) {
+    var t = getTip();
+    t.innerHTML = html;
+    t.classList.add('on');
+    var pad = 12;
+    var x = evt.clientX + pad;
+    var y = evt.clientY + pad;
+    var r = t.getBoundingClientRect();
+    if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - pad;
+    if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - pad;
+    t.style.left = Math.max(4, x) + 'px';
+    t.style.top = Math.max(4, y) + 'px';
+  }
+  function hideTip() {
+    if (tip) tip.classList.remove('on');
+  }
+
+  /* ==========================================================================
+     主渲染入口
+     ========================================================================== */
+  function renderChart(spec) {
+    var box = document.createElement('div');
+    box.className = 'comp chart-comp';
+
+    var cfg = spec.chart || spec.echart || {};
+    var type = (cfg.preset || cfg.type || spec.preset || 'bar').toLowerCase();
+    var data = cfg.data || spec.data || [];
+    var xKey = cfg.xKey || 'name';
+    var series = cfg.series || [{ key: 'value', name: spec.title || '值', type: type }];
+
+    // 系列默认类型跟随主类型；_i 作为稳定索引供交互定位使用
+    series = series.map(function (se, i) {
+      return {
+        _i: i,
+        key: se.key || 'value',
+        name: se.name || se.key || ('系列 ' + (i + 1)),
+        type: (se.type || type).toLowerCase(),
+        color: se.color || PALETTE[i % PALETTE.length],
+        yAxisIndex: se.yAxisIndex || 0,
+        hidden: false,
+        smooth: !!se.smooth,
+        points: se.points,
+      };
+    });
+
+    if (!data.length) {
+      box.innerHTML = '<div class="hint">图表暂无数据</div>';
+      return box;
+    }
+
+    // 饼图 / 环形图走独立分支
+    if (type === 'pie' || type === 'donut' || type === 'doughnut') {
+      box.appendChild(renderPie(data, series, xKey, type === 'pie' ? 0 : 1, cfg));
+      return box;
+    }
+
+    box.appendChild(renderCartesian(data, series, xKey, type, cfg));
+    return box;
+  }
+
+  /* ==========================================================================
+     直角坐标系：折线 / 面积 / 柱 / 散点 / 堆叠
+     ========================================================================== */
+  function renderCartesian(data, series, xKey, type, cfg) {
+    var wrap = document.createElement('div');
+    wrap.className = 'agy-chart';
+
+    var isStacked = type === 'stackedbar' || cfg.stacked === true;
+    var isScatter = type === 'scatter';
+    var isArea = type === 'area';
+
+    // 画布尺寸（viewBox 坐标，实际由 CSS 缩放）
+    var W = 640, H = 300;
+    var padL = 52, padR = 18, padT = 16, padB = 42;
+    var plotW = W - padL - padR;
+    var plotH = H - padT - padB;
+
+    // ---- 计算值域 ----
+    function valOf(d, se) { return Number(d[se.key]) || 0; }
+
+    var maxV = -Infinity, minV = Infinity;
+    var visible = series.filter(function (s) { return !s.hidden; });
+    if (isStacked) {
+      data.forEach(function (d) {
+        var sum = visible.reduce(function (a, se) { return a + valOf(d, se); }, 0);
+        if (sum > maxV) maxV = sum;
+        if (0 < minV) minV = 0;
+      });
+      if (minV === Infinity) minV = 0;
+    } else {
+      visible.forEach(function (se) {
+        data.forEach(function (d) {
+          var v = valOf(d, se);
+          if (v > maxV) maxV = v;
+          if (v < minV) minV = v;
+        });
+      });
+      if (maxV === -Infinity) { maxV = 1; minV = 0; }
+      if (minV === Infinity) { minV = 0; }
+    }
+    if (minV > 0) minV = 0;              // 从 0 起，避免误导
+    if (maxV === minV) maxV = minV + 1;
+
+    var tk = niceTicks(minV, maxV, 5);
+    var lo = Math.min(tk.lo, minV), hi = Math.max(tk.hi, maxV);
+
+    function yOf(v) { return padT + plotH - ((v - lo) / (hi - lo)) * plotH; }
+    function xOf(i) {
+      var n = data.length;
+      if (n === 1) return padL + plotW / 2;
+      return padL + (i / (n - 1)) * plotW;
+    }
+    function xBand(i) {                     // 柱状图用带宽中心
+      var n = data.length;
+      var bw = plotW / n;
+      return padL + i * bw + bw / 2;
+    }
+
+    // ---- 网格 + Y 轴刻度 ----
+    var grid = '', yLabels = '';
+    tk.ticks.forEach(function (t) {
+      var y = yOf(t);
+      if (y < padT - 1 || y > padT + plotH + 1) return;
+      grid += '<line class="agy-grid-line" x1="' + padL + '" y1="' + y.toFixed(1) +
+              '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '"/>';
+      yLabels += '<text class="agy-axis-text" x="' + (padL - 8) + '" y="' + (y + 4).toFixed(1) +
+                 '" text-anchor="end">' + esc(fmtNum(t)) + '</text>';
+    });
+
+    // ---- X 轴标签（自动抽稀，避免拥挤） ----
+    var xLabels = '';
+    var maxLabels = Math.max(3, Math.floor(plotW / 56));
+    var stepX = Math.ceil(data.length / maxLabels);
+    data.forEach(function (d, i) {
+      if (i % stepX !== 0 && i !== data.length - 1) return;
+      var cx = (type === 'bar' || isStacked) ? xBand(i) : xOf(i);
+      var label = String(d[xKey] == null ? '' : d[xKey]);
+      if (label.length > 8) label = label.slice(0, 7) + '…';
+      xLabels += '<text class="agy-axis-text" x="' + cx.toFixed(1) + '" y="' +
+                 (padT + plotH + 20) + '" text-anchor="middle">' + esc(label) + '</text>';
+    });
+
+    // ---- 系列绘制 ----
+    var shapes = '';
+    var hitShapes = '';
+    var defs = '';
+
+    if (type === 'bar' || type === 'groupedbar') {
+      // 分组柱状
+      var n = data.length;
+      var bandW = plotW / n;
+      var groupW = bandW * 0.72;
+      var subW = groupW / Math.max(1, visible.length);
+      data.forEach(function (d, i) {
+        var bx = padL + i * bandW + (bandW - groupW) / 2;
+        visible.forEach(function (se, si) {
+          var v = valOf(d, se);
+          var y = yOf(v);
+          var y0 = yOf(0);
+          var h = Math.abs(y0 - y);
+          var x = bx + si * subW;
+          var w = Math.max(1, subW * 0.86);
+          shapes += '<rect class="agy-bar" data-s="' + se._i + '" data-i="' + i + '"' +
+                    ' x="' + x.toFixed(1) + '" y="' + Math.min(y, y0).toFixed(1) + '"' +
+                    ' width="' + w.toFixed(1) + '" height="' + Math.max(0, h).toFixed(1) + '"' +
+                    ' rx="2" fill="' + se.color + '"/>';
+          hitShapes += '<rect class="agy-hit" data-s="' + se._i + '" data-i="' + i + '"' +
+                       ' x="' + (x - 1).toFixed(1) + '" y="' + padT + '"' +
+                       ' width="' + (w + 2).toFixed(1) + '" height="' + plotH + '" fill="transparent"/>';
+        });
+      });
+    } else if (isStacked) {
+      var n2 = data.length;
+      var bandW2 = plotW / n2;
+      var bw2 = bandW2 * 0.68;
+      data.forEach(function (d, i) {
+        var x = padL + i * bandW2 + (bandW2 - bw2) / 2;
+        var acc = 0;
+        visible.forEach(function (se) {
+          var v = valOf(d, se);
+          var yTop = yOf(acc + v);
+          var yBot = yOf(acc);
+          var h = Math.abs(yBot - yTop);
+          shapes += '<rect class="agy-bar" data-s="' + se._i + '" data-i="' + i + '"' +
+                    ' x="' + x.toFixed(1) + '" y="' + Math.min(yTop, yBot).toFixed(1) + '"' +
+                    ' width="' + bw2.toFixed(1) + '" height="' + Math.max(0, h).toFixed(1) + '"' +
+                    ' fill="' + se.color + '"/>';
+          acc += v;
+        });
+        hitShapes += '<rect class="agy-hit" data-s="0" data-i="' + i + '"' +
+                     ' x="' + x.toFixed(1) + '" y="' + padT + '" width="' + bw2.toFixed(1) +
+                     '" height="' + plotH + '" fill="transparent"/>';
+      });
+    } else if (isScatter) {
+      visible.forEach(function (se) {
+        data.forEach(function (d, i) {
+          var v = valOf(d, se);
+          var cx = xOf(i), cy = yOf(v);
+          shapes += '<circle class="agy-dot" data-s="' + se._i + '" data-i="' + i + '"' +
+                    ' cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="4.5"' +
+                    ' fill="' + se.color + '" opacity="0.85"/>';
+          hitShapes += '<circle class="agy-hit" data-s="' + se._i + '" data-i="' + i + '"' +
+                       ' cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="12" fill="transparent"/>';
+        });
+      });
+    } else {
+      // line / area（area 叠加渐变填充）
+      visible.forEach(function (se) {
+        var pts = [];
+        data.forEach(function (d, i) {
+          pts.push([xOf(i), yOf(valOf(d, se))]);
+        });
+        var dPath = buildPath(pts, se.smooth);
+        if (isArea || se.type === 'area') {
+          var gid = 'agyGrad' + se._i + '_' + Math.random().toString(36).slice(2, 7);
+          defs += '<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+                  '<stop offset="0%" stop-color="' + se.color + '" stop-opacity="0.35"/>' +
+                  '<stop offset="100%" stop-color="' + se.color + '" stop-opacity="0.02"/>' +
+                  '</linearGradient>';
+          var areaD = dPath + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + yOf(lo).toFixed(1) +
+                      ' L' + pts[0][0].toFixed(1) + ' ' + yOf(lo).toFixed(1) + ' Z';
+          shapes += '<path class="agy-area" data-s="' + se._i + '" d="' + areaD +
+                    '" fill="url(#' + gid + ')"/>';
+        }
+        shapes += '<path class="agy-line" data-s="' + se._i + '" d="' + dPath +
+                  '" fill="none" stroke="' + se.color + '" stroke-width="2"' +
+                  ' stroke-linejoin="round" stroke-linecap="round"/>';
+        if (se.points !== false) {
+          pts.forEach(function (pt, i) {
+            shapes += '<circle class="agy-dot" data-s="' + se._i + '" data-i="' + i + '"' +
+                      ' cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="3.2"' +
+                      ' fill="#fff" stroke="' + se.color + '" stroke-width="2"/>';
+          });
+        }
+        // 悬停命中区（整列）
+        data.forEach(function (d, i) {
+          var half = plotW / Math.max(1, data.length - 1) / 2;
+          hitShapes += '<rect class="agy-hit" data-s="' + se._i + '" data-i="' + i + '"' +
+                       ' x="' + Math.max(padL, xOf(i) - half).toFixed(1) + '" y="' + padT + '"' +
+                       ' width="' + (half * 2).toFixed(1) + '" height="' + plotH + '" fill="transparent"/>';
+        });
+      });
+    }
+
+    // ---- 十字准线（折线/散点用） ----
+    var cross = '';
+    if (type === 'line' || type === 'area' || isScatter) {
+      cross = '<line class="agy-cross" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + plotH) +
+              '" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"' +
+              ' opacity="0" pointer-events="none"/>';
+    }
+
+    var svg =
+      '<svg class="agy-chart-svg" viewBox="0 0 ' + W + ' ' + H + '"' +
+      ' preserveAspectRatio="xMidYMid meet" role="img">' +
+      (defs ? '<defs>' + defs + '</defs>' : '') +
+      grid + yLabels + xLabels +
+      shapes + cross +
+      '<line class="agy-axis-line" x1="' + padL + '" y1="' + (padT + plotH) +
+        '" x2="' + (W - padR) + '" y2="' + (padT + plotH) + '"/>' +
+      '<g class="agy-hit-layer">' + hitShapes + '</g>' +
+      '</svg>';
+
+    wrap.innerHTML = svg;
+
+    // ---- 图例 ----
+    var legend = document.createElement('div');
+    legend.className = 'agy-legend';
+    series.forEach(function (se) {
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'agy-legend-item' + (se.hidden ? ' off' : '');
+      item.setAttribute('data-s', se._i);
+      item.innerHTML = '<span class="agy-legend-dot" style="background:' + se.color + '"></span>' +
+                       '<span class="agy-legend-name">' + esc(se.name) + '</span>';
+      legend.appendChild(item);
+    });
+    wrap.appendChild(legend);
+
+    /* ---- 交互绑定 ---- */
+    var svgEl = wrap.querySelector('svg');
+    var crossEl = wrap.querySelector('.agy-cross');
+
+    function seriesOf(idx) {
+      return series.filter(function (s) { return s._i === Number(idx); })[0];
+    }
+
+    function highlight(sIdx, dIdx) {
+      // 淡化非当前系列
+      svgEl.querySelectorAll('.agy-line,.agy-area,.agy-bar,.agy-dot').forEach(function (el) {
+        var same = sIdx == null || el.getAttribute('data-s') === String(sIdx);
+        el.style.opacity = same ? '' : '0.22';
+      });
+      // 强调当前点
+      svgEl.querySelectorAll('.agy-dot').forEach(function (el) {
+        var hit = sIdx != null && el.getAttribute('data-s') === String(sIdx) &&
+                  el.getAttribute('data-i') === String(dIdx);
+        el.setAttribute('r', hit ? '5.5' : (el.classList.contains('agy-dot') ? '3.2' : '4.5'));
+      });
+    }
+
+    function clearHighlight() {
+      svgEl.querySelectorAll('.agy-line,.agy-area,.agy-bar,.agy-dot').forEach(function (el) {
+        el.style.opacity = '';
+      });
+      if (crossEl) crossEl.setAttribute('opacity', '0');
+    }
+
+    svgEl.querySelectorAll('.agy-hit').forEach(function (hit) {
+      hit.addEventListener('mouseenter', function (evt) {
+        var sIdx = hit.getAttribute('data-s');
+        var dIdx = Number(hit.getAttribute('data-i'));
+        var d = data[dIdx];
+        var se = seriesOf(sIdx);
+        if (!d || !se) return;
+
+        highlight(sIdx, dIdx);
+
+        // 十字准线定位
+        if (crossEl) {
+          var cx = (type === 'bar' || isStacked) ? xBand(dIdx) : xOf(dIdx);
+          crossEl.setAttribute('x1', cx.toFixed(1));
+          crossEl.setAttribute('x2', cx.toFixed(1));
+          crossEl.setAttribute('opacity', '0.45');
+        }
+
+        // 提示内容：标题 + 该点所有可见系列
+        var rows = visible.map(function (s2) {
+          var v = valOf(d, s2);
+          var mark = s2._i === Number(sIdx) ? ' agy-tip-row-hi' : '';
+          return '<div class="agy-tip-row' + mark + '">' +
+                 '<span class="agy-tip-dot" style="background:' + s2.color + '"></span>' +
+                 '<span class="agy-tip-name">' + esc(s2.name) + '</span>' +
+                 '<span class="agy-tip-val">' + esc(fmtNum(v)) + '</span></div>';
+        }).join('');
+
+        showTip('<div class="agy-tip-title">' + esc(String(d[xKey])) + '</div>' + rows, evt);
+      });
+
+      hit.addEventListener('mousemove', function (evt) {
+        if (tip && tip.classList.contains('on')) {
+          // 复用最后一次内容，只更新位置
+          showTip(tip.innerHTML, evt);
+        }
+      });
+
+      hit.addEventListener('mouseleave', function () {
+        clearHighlight();
+        hideTip();
+      });
+    });
+
+    // 图例：悬停高亮 / 点击切换系列显隐
+    legend.querySelectorAll('.agy-legend-item').forEach(function (btn) {
+      btn.addEventListener('mouseenter', function () {
+        var s = btn.getAttribute('data-s');
+        svgEl.querySelectorAll('.agy-line,.agy-area,.agy-bar,.agy-dot').forEach(function (el) {
+          var same = el.getAttribute('data-s') === s;
+          el.style.opacity = same ? '' : '0.2';
+        });
+      });
+      btn.addEventListener('mouseleave', clearHighlight);
+      btn.addEventListener('click', function () {
+        var idx = Number(btn.getAttribute('data-s'));
+        var se = series.filter(function (s) { return s._i === idx; })[0];
+        if (!se) return;
+        // 至少保留一个可见系列
+        var othersVisible = series.filter(function (s) { return s._i !== idx && !s.hidden; });
+        if (!se.hidden && othersVisible.length === 0) return;
+        se.hidden = !se.hidden;
+        btn.classList.toggle('off', se.hidden);
+        rebuild();
+      });
+    });
+
+    /* 重建图形（保持 series 状态，只重算值域与路径） */
+    function rebuild() {
+      var next = renderCartesian(data, series, xKey, type, cfg);
+      // 同步图例开关状态到新节点
+      if (wrap.parentNode) {
+        wrap.parentNode.replaceChild(next, wrap);
+        wrap = next;
+      }
+    }
+
+    return wrap;
+  }
+
+  /* 构建折线路径 */
+  function buildPath(pts, smooth) {
+    if (!pts.length) return '';
+    if (pts.length === 1) return 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+    if (!smooth) {
+      return pts.map(function (p, i) {
+        return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+      }).join(' ');
+    }
+    // Catmull-Rom → bezier
+    var d = 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1] || pts[i];
+      var p1 = pts[i];
+      var p2 = pts[i + 1];
+      var p3 = pts[i + 2] || p2;
+      var c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      var c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      var c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += ' C' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ' ' +
+           c2x.toFixed(1) + ' ' + c2y.toFixed(1) + ' ' +
+           p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+    }
+    return d;
+  }
+
+  /* ==========================================================================
+     饼图 / 环形图
+     ========================================================================== */
+  function renderPie(data, series, xKey, innerRatio, cfg) {
+    var wrap = document.createElement('div');
+    wrap.className = 'agy-chart agy-pie-wrap';
+
+    var W = 640, H = 300;
+    var cx = W * 0.34, cy = H / 2;
+    var rOuter = 104, rInner = innerRatio ? rOuter * 0.58 : 0;
+
+    var se = series[0];
+    var valKey = se ? se.key : 'value';
+    var items = data.map(function (d, i) {
+      return {
+        label: String(d[xKey] == null ? '项目 ' + (i + 1) : d[xKey]),
+        value: Number(d[valKey] != null ? d[valKey] : d.value) || 0,
+        color: d.color || PALETTE[i % PALETTE.length],
+      };
+    }).filter(function (it) { return it.value > 0; });
+
+    var total = items.reduce(function (a, b) { return a + b.value; }, 0) || 1;
+
+    // 扇区
+    var acc = -Math.PI / 2;
+    var slices = '';
+    items.forEach(function (it, i) {
+      var ang = (it.value / total) * Math.PI * 2;
+      var a0 = acc, a1 = acc + ang;
+      acc = a1;
+      slices += '<path class="agy-slice" data-i="' + i + '"' +
+                ' d="' + arcPath(cx, cy, rOuter, rInner, a0, a1) + '"' +
+                ' fill="' + it.color + '" opacity="0.9"' +
+                ' data-a0="' + a0 + '" data-a1="' + a1 + '"' +
+                ' data-cx="' + cx + '" data-cy="' + cy + '"' +
+                ' data-r="' + rOuter + '" data-ri="' + rInner + '"/>';
+    });
+
+    // 中心文字（环形图）
+    var center = '';
+    if (rInner) {
+      center = '<text class="agy-pie-total-v" x="' + cx + '" y="' + (cy - 2) +
+               '" text-anchor="middle">' + esc(fmtNum(total)) + '</text>' +
+               '<text class="agy-pie-total-l" x="' + cx + '" y="' + (cy + 16) +
+               '" text-anchor="middle">总计</text>';
+    }
+
+    var svg = '<svg class="agy-chart-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img">' +
+              slices + center + '</svg>';
+    wrap.innerHTML = svg;
+
+    // ---- 右侧图例（带数值与占比） ----
+    var legend = document.createElement('div');
+    legend.className = 'agy-legend agy-legend-vert';
+    items.forEach(function (it, i) {
+      var pct = (it.value / total * 100).toFixed(1);
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'agy-legend-row';
+      row.setAttribute('data-i', i);
+      row.innerHTML =
+        '<span class="agy-legend-dot" style="background:' + it.color + '"></span>' +
+        '<span class="agy-legend-name">' + esc(it.label) + '</span>' +
+        '<span class="agy-legend-val">' + esc(fmtNum(it.value)) + '</span>' +
+        '<span class="agy-legend-pct">' + pct + '%</span>';
+      legend.appendChild(row);
+    });
+    wrap.appendChild(legend);
+
+    /* ---- 交互：扇区悬停外扩 + 中心数值 + 图例联动 ---- */
+    var svgEl = wrap.querySelector('svg');
+
+    function emphasize(i) {
+      svgEl.querySelectorAll('.agy-slice').forEach(function (el) {
+        var on = el.getAttribute('data-i') === String(i);
+        el.setAttribute('opacity', i == null ? '0.9' : (on ? '1' : '0.35'));
+        el.classList.toggle('agy-slice-hi', on);
+      });
+      legend.querySelectorAll('.agy-legend-row').forEach(function (el) {
+        el.classList.toggle('on', el.getAttribute('data-i') === String(i));
+      });
+      // 中心显示当前项
+      if (rInner) {
+        var vv = svgEl.querySelector('.agy-pie-total-v');
+        var ll = svgEl.querySelector('.agy-pie-total-l');
+        if (vv && ll) {
+          if (i == null) {
+            vv.textContent = fmtNum(total);
+            ll.textContent = '总计';
+          } else {
+            var it = items[i];
+            vv.textContent = ((it.value / total) * 100).toFixed(1) + '%';
+            ll.textContent = it.label;
+          }
+        }
+      }
+    }
+
+    svgEl.querySelectorAll('.agy-slice').forEach(function (slice) {
+      slice.addEventListener('mouseenter', function (evt) {
+        var i = Number(slice.getAttribute('data-i'));
+        emphasize(i);
+        var it = items[i];
+        var pct = (it.value / total * 100).toFixed(1);
+        showTip('<div class="agy-tip-title">' + esc(it.label) + '</div>' +
+                '<div class="agy-tip-row"><span class="agy-tip-dot" style="background:' +
+                it.color + '"></span><span class="agy-tip-name">数值</span>' +
+                '<span class="agy-tip-val">' + esc(fmtNum(it.value)) + '</span></div>' +
+                '<div class="agy-tip-row"><span class="agy-tip-name" style="padding-left:13px">占比</span>' +
+                '<span class="agy-tip-val">' + pct + '%</span></div>', evt);
+      });
+      slice.addEventListener('mousemove', function (evt) {
+        if (tip && tip.classList.contains('on')) showTip(tip.innerHTML, evt);
+      });
+      slice.addEventListener('mouseleave', function () {
+        emphasize(null);
+        hideTip();
+      });
+    });
+
+    legend.querySelectorAll('.agy-legend-row').forEach(function (row) {
+      var i = Number(row.getAttribute('data-i'));
+      row.addEventListener('mouseenter', function () { emphasize(i); });
+      row.addEventListener('mouseleave', function () { emphasize(null); });
+      row.addEventListener('click', function () {
+        // 点击图例：把该扇区弹出（切换选中态）
+        var on = row.classList.toggle('pinned');
+        svgEl.querySelectorAll('.agy-slice').forEach(function (el) {
+          if (el.getAttribute('data-i') === String(i)) {
+            el.classList.toggle('agy-slice-pinned', on);
+          }
+        });
+      });
+    });
+
+    return wrap;
+  }
+
+  /* 生成扇形/环形路径 */
+  function arcPath(cx, cy, r, ri, a0, a1) {
+    var large = (a1 - a0) > Math.PI ? 1 : 0;
+    var x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+    var x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    if (!ri) {
+      return 'M' + cx + ' ' + cy +
+             ' L' + x0.toFixed(2) + ' ' + y0.toFixed(2) +
+             ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) +
+             ' Z';
+    }
+    var ix0 = cx + ri * Math.cos(a1), iy0 = cy + ri * Math.sin(a1);
+    var ix1 = cx + ri * Math.cos(a0), iy1 = cy + ri * Math.sin(a0);
+    return 'M' + x0.toFixed(2) + ' ' + y0.toFixed(2) +
+           ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) +
+           ' L' + ix0.toFixed(2) + ' ' + iy0.toFixed(2) +
+           ' A' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + ix1.toFixed(2) + ' ' + iy1.toFixed(2) +
+           ' Z';
+  }
+
+  /* ---------- 导出 ---------- */
+  window.AgyGenUICharts = {
+    render: renderChart,
+    palette: PALETTE,
+    fmtNum: fmtNum,
+  };
+})();
+</script>
+<script>/* agy-genui renderer — 组件渲染引擎
+ * 本文件会被内联进生成的 widget HTML，在 <agent-embed> 沙箱中运行。
+ * 只输出白名单组件，不使用 eval，不加载外部脚本。
+ */
+(function () {
+  'use strict';
+
+  /* ---------- 工具 ---------- */
+  var ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ESC_MAP[c]; }); }
+  function fmtNum(n) {
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return String(n);
+  }
+  function tpl(str, data) {
+    return String(str == null ? '' : str).replace(/\{\{([\w.]+)\}\}/g, function (_, key) {
+      var parts = key.split('.'), cur = data;
+      for (var i = 0; i < parts.length; i++) { cur = cur == null ? undefined : cur[parts[i]]; }
+      return cur == null ? '' : String(cur);
+    });
+  }
+  function postAction(action) {
+    if (!action) return;
+    try { window.parent && window.parent.postMessage({ source: 'agy-genui', type: 'action', action: action }, '*'); } catch (e) {}
+  }
+  function sparkline(data, color) {
+    if (!data || !data.length) return '';
+    var max = Math.max.apply(null, data), min = Math.min.apply(null, data);
+    var range = (max - min) || 1;
+    var pts = data.map(function (v, i) {
+      var x = (i / ((data.length - 1) || 1)) * 100;
+      var y = 24 - ((v - min) / range) * 20 - 2;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    return '<svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none">' +
+      '<polyline fill="none" stroke="' + (color || 'var(--agy-primary)') + '" stroke-width="2" points="' + pts + '"/></svg>';
+  }
+
+  /* ---------- 组件渲染器（白名单） ---------- */
+  var R = {};
+
+  R.stat = function (s) {
+    var delta = '';
+    if (s.delta != null) {
+      var cls = s.deltaType === 'decrease' ? 'delta-neg' : (s.deltaType === 'increase' ? 'delta-pos' : '');
+      delta = '<span class="delta ' + cls + '">' + esc(s.delta) + '</span>';
+    }
+    return '<div class="stat">' +
+      (s.eyebrow ? '<div class="eyebrow">' + esc(s.eyebrow) + '</div>' : '') +
+      '<div class="stat-value">' + esc(s.value) + ' ' + delta + '</div>' +
+      (s.label ? '<div class="stat-label">' + esc(s.label) + '</div>' : '') +
+      (s.sparkline ? sparkline(s.sparkline) : '') +
+      '</div>';
+  };
+
+  R.table = function (s) {
+    var cols = s.columns || [];
+    var rows = Array.isArray(s.data) ? s.data.slice() : [];
+    var filterable = s.filterable !== false;
+    var sortable = s.sortable !== false;
+    var pageSize = (s.pagination && s.pagination.pageSize) || 0;
+    var state = { sortKey: null, sortDir: 1, filter: '', page: 0 };
+
+    function cell(col, row) {
+      var v = row[col.key];
+      if (col.type === 'badge') {
+        var tone = (col.mapping && col.mapping[v]) || 'gray';
+        return '<span class="badge badge-' + esc(tone) + '">' + esc(v) + '</span>';
+      }
+      if (col.type === 'bar') {
+        var pct = v > 1 ? v : (v || 0) * 100;
+        return '<div class="cell-bar"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>';
+      }
+      if (col.type === 'sparkline') return sparkline(v);
+      if (col.type === 'currency') return '$' + esc(v);
+      if (col.type === 'number' && typeof v === 'number') return fmtNum(v);
+      return esc(v);
+    }
+
+    function draw() {
+      var data = rows.filter(function (r) {
+        if (!state.filter) return true;
+        return cols.some(function (c) { return String(r[c.key] == null ? '' : r[c.key]).toLowerCase().indexOf(state.filter) >= 0; });
+      });
+      if (state.sortKey) {
+        data.sort(function (a, b) {
+          var x = a[state.sortKey], y = b[state.sortKey];
+          if (typeof x === 'number' && typeof y === 'number') return (x - y) * state.sortDir;
+          return String(x).localeCompare(String(y)) * state.sortDir;
+        });
+      }
+      var totalPages = pageSize ? Math.max(1, Math.ceil(data.length / pageSize)) : 1;
+      if (state.page >= totalPages) state.page = totalPages - 1;
+      var view = pageSize ? data.slice(state.page * pageSize, (state.page + 1) * pageSize) : data;
+
+      var head = cols.map(function (c) {
+        var sk = (state.sortKey === c.key ? (state.sortDir === 1 ? ' sort-asc' : ' sort-desc') : '');
+        return '<th class="' + (sortable && c.sortable !== false ? 'sortable' + sk : '') + '" data-sort="' + esc(c.key) + '">' + esc(c.title || c.key) + '</th>';
+      }).join('');
+      var body = view.map(function (r, i) {
+        return '<tr>' + cols.map(function (c) { return '<td>' + cell(c, r) + '</td>'; }).join('') + '</tr>';
+      }).join('') || '<tr><td colspan="' + cols.length + '" class="empty">无数据</td></tr>';
+
+      var pager = '';
+      if (pageSize && data.length > pageSize) {
+        pager = '<div class="pager"><button data-page="prev"' + (state.page === 0 ? ' disabled' : '') + '>上一页</button>' +
+          '<span>' + (state.page + 1) + ' / ' + totalPages + '</span>' +
+          '<button data-page="next"' + (state.page >= totalPages - 1 ? ' disabled' : '') + '>下一页</button></div>';
+      }
+
+      var html = '<div class="table-wrap">' +
+        (filterable ? '<div class="filter"><input class="filter-input" placeholder="筛选…" value="' + esc(state.filter) + '"></div>' : '') +
+        '<table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>' + pager + '</div>';
+      root.innerHTML = html;
+
+      var fi = root.querySelector('.filter-input');
+      if (fi) fi.addEventListener('input', function () { state.filter = fi.value.toLowerCase(); state.page = 0; draw(); });
+      Array.prototype.forEach.call(root.querySelectorAll('th.sortable'), function (th) {
+        th.addEventListener('click', function () {
+          var k = th.getAttribute('data-sort');
+          if (state.sortKey === k) state.sortDir = -state.sortDir; else { state.sortKey = k; state.sortDir = 1; }
+          draw();
+        });
+      });
+      var pb = root.querySelector('[data-page="prev"]'), nb = root.querySelector('[data-page="next"]');
+      if (pb) pb.addEventListener('click', function () { state.page--; draw(); });
+      if (nb) nb.addEventListener('click', function () { state.page++; draw(); });
+    }
+
+    var root = document.createElement('div');
+    root.className = 'comp table-comp';
+    draw();
+    return root;
+  };
+
+  R.echart = function (s) {
+    var cfg = s.echart || s.chart || {};
+    // 交给增强图表引擎（charts.js）：支持 line/area/bar/stacked/pie/donut/scatter + 悬停/图例交互
+    if (window.AgyGenUICharts && typeof window.AgyGenUICharts.render === 'function') {
+      var spec = {
+        chart: cfg,
+        data: s.data,
+        title: s.title,
+      };
+      // 让 series 拿到稳定的 _i 索引
+      var cs = spec.chart.series;
+      if (Array.isArray(cs)) {
+        cs = cs.map(function (se, i) { se._i = i; return se; });
+        spec.chart = Object.assign({}, cfg, { series: cs });
+      }
+      return window.AgyGenUICharts.render(spec);
+    }
+    // 兜底：极简柱状
+    var box = document.createElement('div');
+    box.className = 'comp chart-comp';
+    box.innerHTML = '<div class="hint">图表引擎未加载</div>';
+    return box;
+  };
+
+  R.plot = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp plot-comp';
+    box.innerHTML = '<div class="hint">函数绘图：' + esc(s.title || 'Plot') + '（静态预览，参数见 DSL）</div>';
+    // 安全说明：eval 在沙箱禁用，plot 仅渲染 DSL 提供的采样点；若有 samples 则画折线
+    var samples = s.samples;
+    if (Array.isArray(samples) && samples.length) {
+      var max = Math.max.apply(null, samples), min = Math.min.apply(null, samples);
+      var range = (max - min) || 1;
+      var pts = samples.map(function (v, i) {
+        return (i / ((samples.length - 1) || 1) * 100).toFixed(1) + ',' + (24 - ((v - min) / range) * 20 - 2).toFixed(1);
+      }).join(' ');
+      box.innerHTML += '<svg viewBox="0 0 100 24" preserveAspectRatio="none" class="plot-svg"><polyline fill="none" stroke="var(--agy-primary)" stroke-width="1" points="' + pts + '"/></svg>';
+    }
+    return box;
+  };
+
+  R.progress = function (s) {
+    var v = Number(s.value) || 0, max = Number(s.max) || 100;
+    var pct = Math.max(0, Math.min(100, v / max * 100));
+    var ring = s.variant === 'ring';
+    if (ring) {
+      var C = 2 * Math.PI * 26;
+      var off = C * (1 - pct / 100);
+      return '<div class="comp progress ring">' +
+        '<svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="26"/>' +
+        '<circle class="progress" cx="32" cy="32" r="26" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg>' +
+        '<span class="ring-label">' + Math.round(pct) + '%</span>' +
+        (s.label ? '<span class="progress-label">' + esc(s.label) + '</span>' : '') + '</div>';
+    }
+    return '<div class="comp progress">' +
+      (s.label ? '<div class="progress-label">' + esc(s.label) + ' · ' + Math.round(pct) + '%</div>' : '') +
+      '<div class="progress-track"><i style="width:' + pct.toFixed(1) + '%"></i></div></div>';
+  };
+
+  R.badge = function (s) {
+    return '<span class="comp badge badge-' + esc(s.tone || 'info') + '">' + esc(s.label || s.text || '') + '</span>';
+  };
+
+  R.callout = function (s) {
+    var tone = s.tone || 'info';
+    return '<div class="comp callout callout-' + esc(tone) + '"><div class="callout-content">' + esc(s.text || s.content || '') + '</div></div>';
+  };
+
+  R.code = function (s) {
+    return '<div class="comp code"><div class="code-head">' + esc(s.title || s.language || 'code') + '</div><pre><code>' + esc(s.code || s.content || '') + '</code></pre></div>';
+  };
+
+  R.diff = function (s) {
+    function lines(code, cls) {
+      return String(code || '').split('\n').map(function (l, i) {
+        return '<div class="diff-line ' + cls + '"><span class="gutter">' + (i + 1) + '</span><span class="content">' + esc(l) + '</span></div>';
+      }).join('');
+    }
+    return '<div class="comp diff"><div class="code-head">' + esc(s.title || 'Diff') + '</div>' +
+      '<div class="diff-cols"><div class="diff-col"><div class="diff-h removed-h">− old</div>' + lines(s.oldCode, 'removed') + '</div>' +
+      '<div class="diff-col"><div class="diff-h added-h">+ new</div>' + lines(s.newCode, 'added') + '</div></div></div>';
+  };
+
+  R.timeline = function (s) {
+    var items = s.items || [];
+    return '<div class="comp timeline">' + items.map(function (it) {
+      return '<div class="tl-item"><div class="tl-dot"></div><div class="tl-body">' +
+        (it.time ? '<div class="tl-time">' + esc(it.time) + '</div>' : '') +
+        '<div class="tl-title">' + esc(it.title || '') + '</div>' +
+        (it.desc ? '<div class="tl-desc">' + esc(it.desc) + '</div>' : '') + '</div></div>';
+    }).join('') + '</div>';
+  };
+
+  R.tree = function (s) {
+    function node(n, depth) {
+      var hasKids = n.children && n.children.length;
+      var open = n.open !== false;
+      var h = '<div class="tree-node" style="padding-left:' + (depth * 16 + 8) + 'px">' +
+        (hasKids ? '<span class="tree-caret">' + (open ? '▾' : '▸') + '</span>' : '<span class="tree-caret blank"></span>') +
+        '<span class="tree-icon">' + (hasKids ? '📁' : '📄') + '</span><span class="tree-name">' + esc(n.name || '') + '</span></div>';
+      if (hasKids && open) h += n.children.map(function (c) { return node(c, depth + 1); }).join('');
+      return h;
+    }
+    var roots = s.nodes || s.items || [];
+    return '<div class="comp tree">' + roots.map(function (n) { return node(n, 0); }).join('') + '</div>';
+  };
+
+  R.form = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp form';
+    var fields = s.fields || [];
+    box.innerHTML = (s.title ? '<div class="comp-title">' + esc(s.title) + '</div>' : '') +
+      '<div class="form-body">' + fields.map(function (f) {
+        var id = 'f_' + esc(f.key);
+        var input;
+        if (f.type === 'select') input = '<select id="' + id + '" data-key="' + esc(f.key) + '">' + (f.options || []).map(function (o) { return '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>'; }).join('') + '</select>';
+        else if (f.type === 'textarea') input = '<textarea id="' + id + '" data-key="' + esc(f.key) + '" placeholder="' + esc(f.placeholder || '') + '"></textarea>';
+        else if (f.type === 'checkbox') input = '<input type="checkbox" id="' + id + '" data-key="' + esc(f.key) + '">';
+        else input = '<input type="' + (f.type === 'number' ? 'number' : 'text') + '" id="' + id + '" data-key="' + esc(f.key) + '" placeholder="' + esc(f.placeholder || '') + '">';
+        return '<div class="form-field"><label for="' + id + '">' + esc(f.label || f.key) + '</label>' + input + '</div>';
+      }).join('') + '</div><div class="form-actions"><button class="btn primary" data-submit>提交</button></div>';
+    box.querySelector('[data-submit]').addEventListener('click', function () {
+      var payload = {};
+      Array.prototype.forEach.call(box.querySelectorAll('[data-key]'), function (el) {
+        payload[el.getAttribute('data-key')] = el.type === 'checkbox' ? el.checked : el.value;
+      });
+      postAction({ type: 'form_submit', form: payload, action: s.submitAction || null });
+      var note = box.querySelector('.form-note');
+      if (!note) { note = document.createElement('div'); note.className = 'form-note'; box.appendChild(note); }
+      note.textContent = '已提交（已回传给 Agent）';
+    });
+    return box;
+  };
+
+  R.quiz = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp quiz';
+    var qs = s.questions || [];
+    box.innerHTML = (s.title ? '<div class="comp-title">' + esc(s.title) + '</div>' : '') +
+      qs.map(function (q, qi) {
+        var opts = (q.options || []).map(function (o, oi) {
+          return '<label class="quiz-opt"><input type="' + (q.type === 'multiple' ? 'checkbox' : 'radio') + '" name="q' + qi + '" data-q="' + qi + '" data-i="' + oi + '"><span>' + esc(o) + '</span></label>';
+        }).join('');
+        return '<div class="quiz-q" data-qi="' + qi + '"><div class="quiz-qt">' + (qi + 1) + '. ' + esc(q.question) + '</div><div class="quiz-opts">' + opts + '</div><div class="quiz-fb"></div></div>';
+      }).join('') + '<div class="quiz-actions"><button class="btn primary" data-grade>提交答案</button><span class="quiz-score"></span></div>';
+    box.querySelector('[data-grade]').addEventListener('click', function () {
+      var correct = 0;
+      qs.forEach(function (q, qi) {
+        var picked = Array.prototype.filter.call(box.querySelectorAll('[data-q="' + qi + '"]:checked'), function (el) { return true; }).map(function (el) { return Number(el.getAttribute('data-i')); });
+        var ans = Array.isArray(q.answer) ? q.answer : [q.answer];
+        var ok = picked.length === ans.length && picked.every(function (p) { return ans.indexOf(p) >= 0; });
+        if (ok) correct++;
+        var qEl = box.querySelector('[data-qi="' + qi + '"]');
+        var fb = qEl.querySelector('.quiz-fb');
+        fb.textContent = ok ? '✓ 正确' : '✗ 错误' + (q.explanation ? ' — ' + q.explanation : '');
+        fb.className = 'quiz-fb ' + (ok ? 'ok' : 'bad');
+      });
+      box.querySelector('.quiz-score').textContent = '得分：' + correct + ' / ' + qs.length;
+      postAction({ type: 'quiz_submit', score: correct, total: qs.length });
+    });
+    return box;
+  };
+
+  R.tabs = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp tabs';
+    var tabs = s.tabs || [];
+    box.innerHTML = '<div class="tabs-list">' + tabs.map(function (t, i) {
+      return '<button class="tab-btn' + (i === 0 ? ' active' : '') + '" data-i="' + i + '">' + esc(t.label) + '</button>';
+    }).join('') + '</div><div class="tabs-body"></div>';
+    var body = box.querySelector('.tabs-body');
+    function show(i) {
+      body.innerHTML = '';
+      var content = tabs[i] && tabs[i].content;
+      if (content) body.appendChild(render(content));
+      Array.prototype.forEach.call(box.querySelectorAll('.tab-btn'), function (b, j) { b.classList.toggle('active', i === j); });
+    }
+    Array.prototype.forEach.call(box.querySelectorAll('.tab-btn'), function (b) {
+      b.addEventListener('click', function () { show(Number(b.getAttribute('data-i'))); });
+    });
+    show(0);
+    return box;
+  };
+
+  R.accordion = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp accordion';
+    var items = s.items || [];
+    box.innerHTML = items.map(function (it, i) {
+      return '<div class="acc-item"><button class="acc-trigger" data-i="' + i + '">' + esc(it.title) + ' <span class="acc-caret">▾</span></button><div class="acc-body"></div></div>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.acc-trigger'), function (btn) {
+      btn.addEventListener('click', function () {
+        var i = Number(btn.getAttribute('data-i'));
+        var body = btn.nextElementSibling;
+        var open = body.classList.toggle('open');
+        if (open && !body.firstChild && items[i].content) body.appendChild(render(items[i].content));
+      });
+    });
+    return box;
+  };
+
+  R.card = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp card';
+    if (s.title) box.innerHTML = '<div class="comp-title">' + esc(s.title) + '</div>';
+    var body = document.createElement('div');
+    body.className = 'card-body';
+    var content = s.content || (s.items ? { type: 'row', items: s.items } : null);
+    if (content) body.appendChild(render(content));
+    box.appendChild(body);
+    return box;
+  };
+
+  R.row = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp row';
+    (s.items || []).forEach(function (it) {
+      var c = document.createElement('div');
+      c.className = 'row-item';
+      c.style.flex = s.grow ? '1 1 0' : '0 1 auto';
+      c.appendChild(render(it));
+      box.appendChild(c);
+    });
+    return box;
+  };
+
+  R.button = function (s) {
+    var b = document.createElement('button');
+    b.className = 'comp btn ' + (s.variant === 'primary' ? 'primary' : (s.variant || 'secondary'));
+    b.textContent = s.label || '按钮';
+    if (s.disabled) b.disabled = true;
+    b.addEventListener('click', function () { postAction(s.action || { type: 'button_click', label: s.label }); });
+    return b;
+  };
+
+  R.markdown = function (s) {
+    // 极简 Markdown：仅处理换行与代码块，避免引入外部依赖
+    var box = document.createElement('div');
+    box.className = 'comp markdown';
+    var text = String(s.content || s.text || '');
+    box.innerHTML = '<pre class="md-text">' + esc(text) + '</pre>';
+    return box;
+  };
+
+  R.image = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp image';
+    box.innerHTML = '<img src="' + esc(s.src || '') + '" alt="' + esc(s.alt || '') + '" style="max-width:100%;border-radius:8px">';
+    return box;
+  };
+
+  /* ---------- 流程图（分层车道布局，避免错位） ----------
+   * DSL:
+   * { type:"flow", title, lanes:[
+   *     { name:"阶段一：路由判定",
+   *       // 方式一：一串节点，自动用箭头连接
+   *       steps:[ {k:"process",label:"拿到问题"}, {k:"decision",label:"turn_no > 1 ?"},
+   *               {k:"process",label:"走深度思考",sub:"耗时 ≈ 0 ms"} ],
+   *       branch:{ label:"纯内存 if 判断", to:{steps:[...]} }   // 可选分支
+   *     }
+   * ] }
+   * 节点 k: process | decision | note | start | end
+   */
+  R.flow = function (s) {
+    var box = document.createElement('div');
+    box.className = 'comp flow';
+
+    function nodeHtml(n) {
+      var k = n.k || n.kind || 'process';
+      var cls = 'flow-node flow-node--' + k;
+      var inner = '<span class="flow-node-label">' + esc(n.label || n.text || '') + '</span>';
+      if (n.sub) inner += '<span class="flow-node-sub">' + esc(n.sub) + '</span>';
+      return '<div class="' + cls + '">' + inner + '</div>';
+    }
+
+    function stepsHtml(steps) {
+      if (!Array.isArray(steps) || !steps.length) return '';
+      var out = [];
+      steps.forEach(function (n, i) {
+        if (i > 0) {
+          var prevLabel = n.edgeLabel || '';
+          out.push('<div class="flow-arrow' + (prevLabel ? ' flow-arrow--labeled' : '') + '">' +
+            (prevLabel ? '<span class="flow-arrow-label">' + esc(prevLabel) + '</span>' : '') +
+            '<span class="flow-arrow-line"></span></div>');
+        }
+        out.push(nodeHtml(n));
+      });
+      return out.join('');
+    }
+
+    var lanes = s.lanes || [];
+    var html = '';
+    lanes.forEach(function (lane, li) {
+      var laneTitle = lane.name ? '<div class="flow-lane-name">' + esc(lane.name) + '</div>' : '';
+      var row = stepsHtml(lane.steps);
+      html += '<div class="flow-lane" data-lane="' + li + '">' + laneTitle +
+        '<div class="flow-track">' + row + '</div>';
+
+      // 可选：主轨下方的分支行（如「纯内存 if 判断」走另一条路）
+      if (lane.branch && lane.branch.steps) {
+        html += '<div class="flow-branch">' +
+          '<div class="flow-branch-head">' + esc(lane.branch.label || '分支') + '</div>' +
+          '<div class="flow-track">' + stepsHtml(lane.branch.steps) + '</div>' +
+          '</div>';
+      }
+      html += '</div>';
+    });
+
+    if (!html) html = '<div class="flow-empty">flow 缺少 lanes</div>';
+    box.innerHTML = html;
+
+    if (s.title) {
+      var h = document.createElement('div');
+      h.className = 'comp-title';
+      h.textContent = s.title;
+      box.insertBefore(h, box.firstChild);
+    }
+    return box;
+  };
+
+  /* ---------- 渲染入口 ---------- */
+  function render(spec) {
+    if (!spec || typeof spec !== 'object') return document.createTextNode('');
+    var type = String(spec.type || '');
+    var fn = R[type];
+    if (!fn) {
+      var d = document.createElement('div');
+      d.className = 'comp unknown';
+      d.textContent = '未知组件类型: ' + type;
+      return d;
+    }
+    try {
+      var out = fn(spec);
+      // 组件渲染器既可返回 DOM 节点，也可返回 HTML 字符串；统一转成节点
+      if (typeof out === 'string') {
+        var box = document.createElement('div');
+        box.innerHTML = out;
+        var el = box.firstElementChild || box;
+        // 字符串组件统一带 .comp，保证进入 widget-items 栅格时样式一致
+        if (el.classList && !el.classList.contains('comp')) el.classList.add('comp');
+        return el;
+      }
+      return out;
+    }
+    catch (e) {
+      var er = document.createElement('div');
+      er.className = 'comp error';
+      er.textContent = '组件渲染失败 (' + type + '): ' + e.message;
+      return er;
+    }
+  }
+
+  window.AgyGenUIRender = {
+    render: render,
+    components: Object.keys(R),
+    version: '1.0.0'
+  };
+
+  // 自动渲染：读取内联的 __AGY_SPEC__
+  function boot() {
+    var host = document.getElementById('agy-root');
+    if (!host) return;
+    var spec = window.__AGY_SPEC__;
+    if (!spec) { host.innerHTML = '<div class="comp error">缺少 __AGY_SPEC__</div>'; return; }
+    if (spec.title) {
+      var h = document.createElement('div');
+      h.className = 'widget-title';
+      h.textContent = spec.title;
+      host.appendChild(h);
+    }
+    if (spec.description) {
+      var d = document.createElement('div');
+      d.className = 'widget-desc';
+      d.textContent = spec.description;
+      host.appendChild(d);
+    }
+    var items = spec.items || (spec.type ? [spec] : []);
+    if (!Array.isArray(items)) items = [items];
+    var wrap = document.createElement('div');
+    wrap.className = 'widget-items';
+    items.forEach(function (it) { wrap.appendChild(render(it)); });
+    host.appendChild(wrap);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+<script>window.__AGY_SPEC__ = {"title":"图表组件演示","description":"折线 / 面积 / 柱状 / 堆叠 / 饼图 / 环形 / 散点，全部支持悬停与图例交互","items":[{"type":"echart","title":"折线图 · 带图例联动","echart":{"preset":"line","xKey":"month","data":[{"month":"1月","tokens":12000,"cost":120},{"month":"2月","tokens":15500,"cost":148},{"month":"3月","tokens":18200,"cost":176},{"month":"4月","tokens":16800,"cost":162},{"month":"5月","tokens":21500,"cost":205},{"month":"6月","tokens":24800,"cost":232},{"month":"7月","tokens":23100,"cost":221}],"series":[{"key":"tokens","name":"Token 消耗","type":"line","color":"#3b82f6","smooth":true},{"key":"cost","name":"费用","type":"line","color":"#10b981","smooth":true}]}},{"type":"echart","title":"面积图 · 平滑曲线","echart":{"preset":"area","xKey":"day","data":[{"day":"周一","v":3200},{"day":"周二","v":4100},{"day":"周三","v":3800},{"day":"周四","v":5200},{"day":"周五","v":6100},{"day":"周六","v":4800},{"day":"周日","v":3900}],"series":[{"key":"v","name":"活跃度","type":"area","color":"#8b5cf6","smooth":true}]}},{"type":"echart","title":"分组柱状图","echart":{"preset":"bar","xKey":"model","data":[{"model":"Gemini 3.8","input":45200,"output":12800},{"model":"Claude Opus","input":28400,"output":9200},{"model":"Gemini 3.5","input":18600,"output":5400}],"series":[{"key":"input","name":"输入","type":"bar","color":"#3b82f6"},{"key":"output","name":"输出","type":"bar","color":"#f59e0b"}]}},{"type":"echart","title":"堆叠柱状图","echart":{"preset":"stackedBar","xKey":"week","data":[{"week":"第1周","a":3200,"b":2100,"c":1400},{"week":"第2周","a":4100,"b":2600,"c":1800},{"week":"第3周","a":3800,"b":3100,"c":1200},{"week":"第4周","a":4600,"b":2800,"c":2100}],"series":[{"key":"a","name":"工具执行","color":"#2f6df6"},{"key":"b","name":"模型回复","color":"#8b5cf6"},{"key":"c","name":"系统开销","color":"#06b6d4"}]}},{"type":"echart","title":"环形图 · 悬停扇区突出","echart":{"preset":"donut","xKey":"type","data":[{"type":"工具结果","value":83100},{"type":"工具定义","value":38300},{"type":"系统提示词","value":19400},{"type":"模型思考","value":10100},{"type":"助手消息","value":5200},{"type":"用户消息","value":1300}],"series":[{"key":"value","name":"上下文"}]}},{"type":"echart","title":"饼图","echart":{"preset":"pie","xKey":"tool","data":[{"tool":"run_command","value":65},{"tool":"read_file","value":53},{"tool":"write_file","value":30},{"tool":"manage_task","value":24},{"tool":"swarm","value":16},{"tool":"edit_file","value":5}],"series":[{"key":"value","name":"调用次数"}]}},{"type":"echart","title":"散点图","echart":{"preset":"scatter","xKey":"step","data":[{"step":"1","dur":1200},{"step":"2","dur":3400},{"step":"3","dur":2100},{"step":"4","dur":5600},{"step":"5","dur":4800},{"step":"6","dur":7200},{"step":"7","dur":3900}],"series":[{"key":"dur","name":"耗时 (ms)","type":"scatter","color":"#ec4899"}]}}]};</script>
+</body>
+</html>

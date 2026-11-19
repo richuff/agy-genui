@@ -2,8 +2,8 @@
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "agy-genui",
   "displayName": "Generative UI",
-  "version": "1.0.0",
-  "description": "Generative UI for Antigravity — render interactive UI components (charts, tables, diffs, forms, quizzes, timelines) inline from declarative JSON via <agent-embed>. Zero dependencies, CSP-safe.",
+  "version": "1.1.0",
+  "description": "Generative UI for Antigravity — render interactive UI components (charts, tables, diffs, forms, quizzes, timelines) inline from declarative JSON via <agent-embed>. Charts support line/area/bar/grouped/stacked/pie/donut/scatter with hover tooltips, legend toggle and crosshair. Zero dependencies, CSP-safe.",
   "license": "MIT",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [

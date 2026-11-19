@@ -136,61 +136,26 @@
   };
 
   R.echart = function (s) {
+    var cfg = s.echart || s.chart || {};
+    // 交给增强图表引擎（charts.js）：支持 line/area/bar/stacked/pie/donut/scatter + 悬停/图例交互
+    if (window.AgyGenUICharts && typeof window.AgyGenUICharts.render === 'function') {
+      var spec = {
+        chart: cfg,
+        data: s.data,
+        title: s.title,
+      };
+      // 让 series 拿到稳定的 _i 索引
+      var cs = spec.chart.series;
+      if (Array.isArray(cs)) {
+        cs = cs.map(function (se, i) { se._i = i; return se; });
+        spec.chart = Object.assign({}, cfg, { series: cs });
+      }
+      return window.AgyGenUICharts.render(spec);
+    }
+    // 兜底：极简柱状
     var box = document.createElement('div');
     box.className = 'comp chart-comp';
-    var preset = (s.echart && s.echart.preset) || 'bar';
-    var data = (s.echart && s.echart.data) || s.data || [];
-    var xKey = (s.echart && s.echart.xKey) || 'name';
-    var series = (s.echart && s.echart.series) || [{ key: 'value', name: '值', type: preset }];
-
-    // 轻量 SVG 渲染（无需外部依赖，CSP 友好）—— 支持 bar / line / pie
-    var max = 0;
-    data.forEach(function (d) { series.forEach(function (se) { var v = Number(d[se.key]); if (v > max) max = v; }); });
-    max = max || 1;
-    var W = 600, H = 260, pad = 36;
-    var buckets = data.slice(0, 20);
-    var bw = buckets.length ? (W - pad * 2) / buckets.length : 0;
-    var parts = [];
-
-    if (preset === 'pie') {
-      var total = data.reduce(function (a, d) { return a + (Number(d.value || d[s.valueKey || 'value']) || 0); }, 0) || 1;
-      var cx = W / 2, cy = H / 2, r = 90, acc = -Math.PI / 2;
-      var palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-      data.slice(0, 12).forEach(function (d, i) {
-        var val = Number(d.value || d[s.valueKey || 'value']) || 0;
-        var ang = (val / total) * Math.PI * 2;
-        var x1 = cx + r * Math.cos(acc), y1 = cy + r * Math.sin(acc);
-        acc += ang;
-        var x2 = cx + r * Math.cos(acc), y2 = cy + r * Math.sin(acc);
-        var large = ang > Math.PI ? 1 : 0;
-        parts.push('<path d="M' + cx + ' ' + cy + ' L' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + ' Z" fill="' + palette[i % palette.length] + '" opacity="0.85"><title>' + esc(d[xKey]) + ': ' + val + '</title></path>');
-      });
-      box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart-svg">' + parts.join('') + '</svg>';
-      return box;
-    }
-
-    // bar / line
-    var grid = '';
-    for (var g = 0; g <= 4; g++) {
-      var gy = pad + (H - pad * 2) * g / 4;
-      grid += '<line x1="' + pad + '" y1="' + gy + '" x2="' + (W - pad) + '" y2="' + gy + '" class="grid"/>';
-      grid += '<text x="' + (pad - 6) + '" y="' + (gy + 4) + '" class="axis" text-anchor="end">' + fmtNum(max * (4 - g) / 4) + '</text>';
-    }
-    var colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
-    var bars = '';
-    buckets.forEach(function (d, i) {
-      var bx = pad + i * bw + bw * 0.15;
-      var groupW = bw * 0.7;
-      var subW = groupW / series.length;
-      series.forEach(function (se, si) {
-        var v = Number(d[se.key]) || 0;
-        var bh = (v / max) * (H - pad * 2);
-        var color = se.color || colors[si % colors.length];
-        bars += '<rect x="' + (bx + si * subW).toFixed(1) + '" y="' + (H - pad - bh).toFixed(1) + '" width="' + (subW * 0.8).toFixed(1) + '" height="' + bh.toFixed(1) + '" fill="' + color + '" opacity="0.85"><title>' + esc(se.name || se.key) + ': ' + v + '</title></rect>';
-      });
-      bars += '<text x="' + (pad + i * bw + bw / 2).toFixed(1) + '" y="' + (H - pad + 16) + '" class="axis" text-anchor="middle">' + esc(String(d[xKey]).slice(0, 8)) + '</text>';
-    });
-    box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart-svg">' + grid + bars + '</svg>';
+    box.innerHTML = '<div class="hint">图表引擎未加载</div>';
     return box;
   };
 

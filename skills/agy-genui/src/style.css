@@ -75,6 +75,107 @@ td .empty { color: var(--agy-muted); }
 .chart-svg .axis { fill: var(--agy-muted); font-size: 11px; }
 .hint { font-size: 11px; color: var(--agy-muted); }
 
+/* ---------- 增强图表（charts.js） ---------- */
+.agy-chart { position: relative; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.agy-chart-svg { display: block; width: 100%; height: auto; max-height: 320px; overflow: visible; }
+
+.agy-grid-line { stroke: var(--agy-border); stroke-width: 1; opacity: .55; }
+.agy-axis-line { stroke: var(--agy-border); stroke-width: 1; }
+.agy-axis-text { fill: var(--agy-muted); font-size: 11px; font-family: inherit; }
+
+.agy-bar { transition: opacity .12s ease; }
+.agy-line { transition: opacity .12s ease; }
+.agy-area { transition: opacity .12s ease; }
+.agy-dot  { transition: opacity .12s ease, r .1s ease; }
+
+/* 悬停命中层：透明但可接收事件 */
+.agy-hit { cursor: pointer; }
+.agy-hit-layer { pointer-events: all; }
+
+/* 饼图扇区 */
+.agy-slice {
+  cursor: pointer;
+  transition: opacity .12s ease, transform .14s cubic-bezier(.2,.8,.3,1);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.agy-slice.agy-slice-hi { transform: scale(1.035); }
+.agy-slice.agy-slice-pinned { transform: scale(1.06); }
+
+.agy-pie-total-v {
+  fill: var(--agy-text); font-size: 22px; font-weight: 700;
+  font-family: inherit; letter-spacing: -.5px;
+}
+.agy-pie-total-l { fill: var(--agy-muted); font-size: 11px; font-family: inherit; }
+
+/* 图例（横向，折线/柱状） */
+.agy-legend {
+  display: flex; flex-wrap: wrap; gap: 6px 14px;
+  padding: 2px 2px 0; align-items: center;
+}
+.agy-legend-item {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 4px; border: none; background: transparent;
+  font: inherit; font-size: 11px; color: var(--agy-muted);
+  cursor: pointer; border-radius: 5px; transition: background .12s, opacity .12s;
+}
+.agy-legend-item:hover { background: var(--agy-surface-2); color: var(--agy-text); }
+.agy-legend-item.off { opacity: .38; text-decoration: line-through; }
+.agy-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 8px; }
+.agy-legend-name { white-space: nowrap; }
+
+/* 图例（纵向，饼图右侧） */
+.agy-pie-wrap { flex-direction: row; align-items: center; gap: 4px; }
+.agy-pie-wrap > svg { flex: 1 1 58%; min-width: 0; }
+.agy-legend-vert {
+  flex: 1 1 42%; flex-direction: column; align-items: stretch;
+  gap: 1px; max-height: 260px; overflow-y: auto; padding-right: 2px;
+}
+.agy-legend-row {
+  display: grid; grid-template-columns: 8px 1fr auto auto;
+  align-items: center; gap: 6px;
+  padding: 4px 6px; border: none; background: transparent;
+  font: inherit; font-size: 11px; text-align: left;
+  color: var(--agy-muted); cursor: pointer; border-radius: 5px;
+  transition: background .12s;
+}
+.agy-legend-row:hover, .agy-legend-row.on, .agy-legend-row.pinned {
+  background: var(--agy-surface-2); color: var(--agy-text);
+}
+.agy-legend-val { font-variant-numeric: tabular-nums; color: var(--agy-text); }
+.agy-legend-pct { font-variant-numeric: tabular-nums; opacity: .7; min-width: 38px; text-align: right; }
+
+/* 悬浮提示 */
+.agy-chart-tip {
+  position: fixed; z-index: 2147483000; pointer-events: none;
+  min-width: 120px; max-width: 260px;
+  padding: 7px 9px; border-radius: 8px;
+  background: var(--agy-surface, #fff);
+  border: 1px solid var(--agy-border);
+  box-shadow: 0 6px 22px rgba(16,18,24,.16), 0 1px 4px rgba(16,18,24,.08);
+  font-size: 11px; color: var(--agy-text);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity .1s ease, transform .1s ease;
+}
+.agy-chart-tip.on { opacity: 1; transform: none; }
+.agy-tip-title {
+  font-weight: 650; margin-bottom: 4px; font-size: 11.5px;
+  color: var(--agy-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.agy-tip-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 1.5px 0; color: var(--agy-muted);
+}
+.agy-tip-row-hi { color: var(--agy-text); font-weight: 600; }
+.agy-tip-dot { width: 7px; height: 7px; border-radius: 2px; flex: 0 0 7px; }
+.agy-tip-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agy-tip-val { font-variant-numeric: tabular-nums; color: var(--agy-text); }
+
+@media (max-width: 520px) {
+  .agy-pie-wrap { flex-direction: column; }
+  .agy-legend-vert { max-height: none; }
+}
+
 /* progress */
 .progress { display: flex; flex-direction: column; gap: 6px; }
 .progress-label { font-size: 11px; color: var(--agy-muted); }

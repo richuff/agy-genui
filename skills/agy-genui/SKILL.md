@@ -29,7 +29,7 @@ description: Antigravity Generative UI 技能。让模型通过声明式 JSON DS
 | | `table` | 可排序/筛选/分页表格，支持 number/currency/badge/bar/sparkline 列 |
 | | `progress` | 线性/环形进度条，支持 label/value/max/variant |
 | | `badge` | 状态徽章，支持 tone 变体 |
-| **图表** | `echart` | 轻量 SVG 图表（bar/line/pie），零依赖、主题自适应、带悬浮提示 |
+| **图表** | `echart` | SVG 图表，支持 `line` / `area` / `bar` / `stackedBar` / `pie` / `donut` / `scatter`，带悬停提示、图例联动、十字准线 |
 | | `plot` | 函数绘图预览（DSL 提供采样点 samples；浏览器内不执行表达式，安全） |
 | | `sparkline` | stat/table 内联微型趋势图 |
 | **代码/文本** | `code` | 代码块（纯文本转义展示） |
@@ -126,27 +126,108 @@ description: Antigravity Generative UI 技能。让模型通过声明式 JSON DS
 }
 ```
 
-#### `echart` - ECharts 图表
+#### `echart` - 图表（含交互）
+
+**折线图（推荐用于趋势）**
+
 ```json
 {
   "type": "echart",
   "title": "Token 消耗趋势",
   "echart": {
     "preset": "line",
+    "xKey": "month",
     "data": [
-      { "date": "2024-01", "tokens": 12000, "cost": 0.12 },
-      { "date": "2024-02", "tokens": 15000, "cost": 0.15 }
+      { "month": "1月", "tokens": 12000, "cost": 120 },
+      { "month": "2月", "tokens": 15500, "cost": 148 },
+      { "month": "3月", "tokens": 18200, "cost": 176 }
     ],
-    "xKey": "date",
     "series": [
-      { "key": "tokens", "name": "Token", "type": "line", "color": "#3b82f6" },
-      { "key": "cost", "name": "费用", "type": "bar", "color": "#10b981", "yAxisIndex": 1 }
+      { "key": "tokens", "name": "Token", "color": "#3b82f6", "smooth": true },
+      { "key": "cost", "name": "费用", "color": "#10b981", "smooth": true }
     ]
   }
 }
 ```
 
-**preset 模式**：`line`、`bar`、`area`、`pie`、`scatter`、`radar`、`gauge`、`funnel`、`treemap`、`sankey`、`heatmap`、`bigline`、`wordCloud`
+**面积图**：`preset` 改为 `"area"`，折线下方叠加渐变填充。
+
+**分组柱状图**：`preset: "bar"` + 多个系列即自动分组。
+
+**堆叠柱状图**：
+
+```json
+{
+  "type": "echart",
+  "echart": {
+    "preset": "stackedBar",
+    "xKey": "week",
+    "data": [{ "week": "第1周", "a": 3200, "b": 2100 }],
+    "series": [
+      { "key": "a", "name": "工具执行", "color": "#2f6df6" },
+      { "key": "b", "name": "模型回复", "color": "#8b5cf6" }
+    ]
+  }
+}
+```
+
+**环形图（带中心数值）**：
+
+```json
+{
+  "type": "echart",
+  "title": "上下文构成",
+  "echart": {
+    "preset": "donut",
+    "xKey": "type",
+    "data": [
+      { "type": "工具结果", "value": 83100 },
+      { "type": "工具定义", "value": 38300 }
+    ],
+    "series": [{ "key": "value", "name": "上下文" }]
+  }
+}
+```
+
+环形图中心显示总量；悬停某扇区时切换为该项目的名称与占比。
+
+**饼图**：`preset` 改为 `"pie"`（实心，无中心数值）。
+
+**散点图**：`preset: "scatter"`，适合展示离群点与分布。
+
+> 完整可运行示例见 `src/example-charts.spec.json`。
+
+**preset 模式**：`line`、`area`、`bar`、`groupedBar`、`stackedBar`、`pie`、`donut`、`scatter`
+
+> 旧版文档提到的雷达/仪表盘/漏斗/树图等重型图表未实现（需 ECharts 等外部依赖，与零依赖 + 严格 CSP 冲突）。当前引擎为自研纯 SVG 实现。
+
+**系列字段**
+
+| 字段 | 说明 |
+|---|---|
+| `key` | 取数据里的哪个字段 |
+| `name` | 图例显示名 |
+| `type` | 覆盖主类型，可混搭（如主 `bar`、某系列 `line`） |
+| `color` | 十六进制色，省略则取内置调色板 |
+| `smooth` | 折线/面积是否平滑（Catmull-Rom 曲线） |
+| `points` | 折线是否画数据点，默认 true |
+
+**交互能力**（参考 agy-context 的做法）
+
+| 交互 | 行为 |
+|---|---|
+| **悬停数据点/柱子** | 该系列高亮、其余淡化到 22%；浮动 tooltip 显示该列所有系列的值 |
+| **十字准线** | 折线/面积/散点图悬停时出现垂直虚线，跟随当前列 |
+| **图例悬停** | 高亮对应系列，其余淡化 |
+| **图例点击** | 切换该系列显隐（至少保留一个可见系列） |
+| **饼图扇区悬停** | 扇区放大 3.5%、其余淡化到 35%；环形图中心切换显示该项目名称与占比 |
+| **饼图图例** | 悬停联动高亮；点击可将扇区置顶强调（`pinned`） |
+
+**坐标轴**
+
+- Y 轴刻度自动取「好看」步长（1/2/5×10ⁿ），并始终从 0 起，避免视觉误导
+- X 轴标签按宽度自动抽稀，超长截断为 8 字符加省略号
+- 数值自动缩写：`12.0K` / `1.5M` / `2.3B`
 
 #### `plot` - 数学函数绘图
 ```json
@@ -366,7 +447,7 @@ echo '{"type":"stat","label":"Token","value":"1.2M"}' | node skills/agy-genui/sr
 ## 技术实现
 
 - **渲染引擎**：纯内联 JS（`src/renderer.js`），白名单组件，无 `eval`、无外部脚本
-- **图表**：轻量 SVG 实现（bar/line/pie），零依赖；避免 CDN，兼容严格 CSP
+- **图表引擎**：`src/charts.js` 自研 SVG 实现，零依赖；支持 8 种图表类型 + 完整交互（悬停高亮、图例联动、十字准线、扇区外扩、浮动 tooltip）
 - **主题适配**：CSS 变量自动适配 Antigravity `--background`/`--foreground`/`--chart-*` 主题变量，支持深/浅色
 - **双向动作环**：表单/测验/按钮通过 `window.parent.postMessage` 把 `action` 回传宿主
 - **流式挂载**：预留；当前为一次性渲染（spec 就绪后挂载全部组件）
@@ -374,6 +455,9 @@ echo '{"type":"stat","label":"Token","value":"1.2M"}' | node skills/agy-genui/sr
 
 ## 版本历史
 
+- v1.1.0 - 图表引擎强化：新增 `line`（真折线）/ `area` / `stackedBar` / `donut` / `scatter`；
+  加入悬停高亮、图例悬停联动与点击显隐、十字准线、饼图扇区外扩与中心数值切换、
+  浮动 tooltip；坐标轴智能刻度与标签抽稀
 - v1.0.0 - 初始版本，支持基础组件库
 
 ## 许可证
