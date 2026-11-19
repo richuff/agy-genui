@@ -1,0 +1,10 @@
+{
+  "title": "agy-context 会话统计概览",
+  "description": "声明式 DSL 渲染示例 — 全部组件零外部依赖",
+  "items": [
+    { "type": "stat", "eyebrow": "本月累计", "label": "Token 消耗", "value": "1.2M", "delta": "+12.4%", "deltaType": "increase", "sparkline": [12, 19, 15, 25, 22, 30, 38] },
+    { "type": "stat", "eyebrow": "估算成本", "label": "费用", "value": "$6.65", "delta": "-3.1%", "deltaType": "decrease" },
+    { "type": "progress", "label": "上下文占用", "value": 72, "max": 100, "variant": "ring" },
+    { "type": "progress", "label": "缓存命中率", "value": 93.1, "max": 100 }
+  ]
+}

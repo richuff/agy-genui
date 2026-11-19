@@ -1,0 +1,29 @@
+{
+  "title": "深度思考路由流程",
+  "description": "阶段一：路由判定（做决策）→ 阶段二：深度思考通道",
+  "items": [
+    {
+      "type": "flow",
+      "lanes": [
+        {
+          "name": "阶段一：路由判定（做决策）",
+          "steps": [
+            { "k": "process", "label": "拿到问题和 turn_no" },
+            { "k": "decision", "label": "查一下 turn_no > 1 ？", "edgeLabel": "纯内存 if 判断" },
+            { "k": "process", "label": "决定：走深度思考通道", "sub": "耗时 ≈ 0 ms" }
+          ]
+        },
+        {
+          "name": "阶段二：深度思考通道",
+          "steps": [
+            { "k": "process", "label": "1. 知识库 9 步召回 + 预取", "sub": "2~3s" },
+            { "k": "process", "label": "2. 主力大模型深度推理与生成", "sub": "10~25s" },
+            { "k": "process", "label": "3. 四道出口闸门校验", "sub": "0.1s" },
+            { "k": "process", "label": "4. 证据元数据回填", "sub": "0.5s" },
+            { "k": "note", "label": "💡 深度思考实际生成耗时：15~30 秒" }
+          ]
+        }
+      ]
+    }
+  ]
+}

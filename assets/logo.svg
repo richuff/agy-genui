@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="gu" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="55%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="6" width="56" height="52" rx="9" fill="url(#gu)" opacity="0.10"/>
+  <rect x="4" y="6" width="56" height="52" rx="9" fill="none" stroke="url(#gu)" stroke-width="2.5"/>
+  <!-- 窗口/组件框 -->
+  <rect x="12" y="14" width="40" height="30" rx="3" fill="none" stroke="url(#gu)" stroke-width="2"/>
+  <line x1="12" y1="21" x2="52" y2="21" stroke="url(#gu)" stroke-width="1.6" opacity="0.7"/>
+  <circle cx="16" cy="17.5" r="1.2" fill="url(#gu)"/>
+  <circle cx="20" cy="17.5" r="1.2" fill="url(#gu)"/>
+  <circle cx="24" cy="17.5" r="1.2" fill="url(#gu)"/>
+  <!-- 内部小图表 -->
+  <rect x="17" y="34" width="5" height="6" rx="1" fill="url(#gu)" opacity="0.6"/>
+  <rect x="26" y="30" width="5" height="10" rx="1" fill="url(#gu)" opacity="0.8"/>
+  <rect x="35" y="27" width="5" height="13" rx="1" fill="url(#gu)"/>
+  <path d="M15 48h34" stroke="url(#gu)" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+</svg>

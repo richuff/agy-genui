@@ -1,0 +1,59 @@
+{
+  "title": "agy-genui 全组件验证",
+  "description": "表格 / 图表 / Diff / Tabs / 测验",
+  "items": [
+    {
+      "type": "tabs",
+      "tabs": [
+        {
+          "label": "会话表格",
+          "content": {
+            "type": "table",
+            "columns": [
+              { "key": "name", "title": "会话", "sortable": true },
+              { "key": "tokens", "title": "Token", "type": "number", "sortable": true },
+              { "key": "cost", "title": "费用", "type": "currency" },
+              { "key": "status", "title": "状态", "type": "badge", "mapping": { "active": "success", "idle": "gray" } }
+            ],
+            "data": [
+              { "name": "会话A", "tokens": 12000, "cost": 0.12, "status": "active" },
+              { "name": "会话B", "tokens": 8000, "cost": 0.08, "status": "idle" },
+              { "name": "会话C", "tokens": 15000, "cost": 0.15, "status": "active" }
+            ],
+            "filterable": true,
+            "sortable": true
+          }
+        },
+        {
+          "label": "图表",
+          "content": {
+            "type": "echart",
+            "title": "Token 趋势",
+            "echart": {
+              "preset": "bar",
+              "data": [{"m":"1月","value":12},{"m":"2月","value":19},{"m":"3月","value":15},{"m":"4月","value":25}],
+              "xKey": "m",
+              "series": [{"key":"value","name":"Token","type":"bar"}]
+            }
+          }
+        },
+        {
+          "label": "代码 Diff",
+          "content": {
+            "type": "diff",
+            "title": "重构对比",
+            "oldCode": "const x = 1;\nfunction f(){ return x; }",
+            "newCode": "const x = 2;\nfunction f(){ return x + 1; }"
+          }
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "title": "快速测验",
+      "questions": [
+        { "type": "single", "question": "1+1=?", "options": ["1", "2", "3"], "answer": 1, "explanation": "基础算术" }
+      ]
+    }
+  ]
+}

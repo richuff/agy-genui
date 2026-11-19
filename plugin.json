@@ -1,0 +1,23 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "agy-genui",
+  "displayName": "Generative UI",
+  "version": "1.0.0",
+  "description": "Generative UI for Antigravity — render interactive UI components (charts, tables, diffs, forms, quizzes, timelines) inline from declarative JSON via <agent-embed>. Zero dependencies, CSP-safe.",
+  "license": "MIT",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "用 agy-genui 画一个可排序的会话统计表格",
+    "用图表展示最近 7 天的 token 消耗趋势",
+    "生成一个交互式测验来检验我对 Antigravity 的了解"
+  ],
+  "keywords": [
+    "generative-ui",
+    "interactive",
+    "charts",
+    "dashboard",
+    "dsl",
+    "agent-embed",
+    "local"
+  ]
+}
